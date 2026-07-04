@@ -208,6 +208,19 @@ const icons: Record<string, () => ReactElement> = {
     </g>
   ),
 
+  bubbles: () => (
+    <g>
+      {/* bubble wand */}
+      <line x1="14" y1="52" x2="24" y2="34" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+      <circle cx="26" cy="30" r="7" fill="none" stroke={TERRA} strokeWidth="3" />
+      {/* floating bubbles */}
+      <circle cx="40" cy="24" r="8" fill="rgba(143,184,214,0.35)" stroke={SKY} strokeWidth="2" />
+      <circle cx="52" cy="14" r="5" fill="rgba(143,184,214,0.35)" stroke={SKY} strokeWidth="2" />
+      <circle cx="48" cy="38" r="4" fill="rgba(143,184,214,0.35)" stroke={SKY} strokeWidth="2" />
+      <circle cx="37" cy="24" r="2" fill="#fff" opacity="0.8" />
+    </g>
+  ),
+
   // ---- reveal ----
   gift: () => (
     <g>

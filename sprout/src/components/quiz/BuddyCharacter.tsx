@@ -4,6 +4,7 @@
 import { artFor, isDollTheme } from '../../lib/art'
 import { featureFor, type AnimalFeature } from '../../data/animalFeatures'
 import { lookFor, type DollLook } from '../../data/dollLooks'
+import ChoiceIcon from './ChoiceIcon'
 import type { Buddy } from '../../data/buddies'
 
 const INK = '#4a4640'
@@ -13,10 +14,12 @@ export default function BuddyCharacter({
   buddy,
   size = 132,
   outfit,
+  held = [],
 }: {
   buddy: Buddy
   size?: number
   outfit?: Outfit
+  held?: string[] // toy icons carried in the doll's hands
 }) {
   const png = artFor(`buddy-${buddy.key}`)
   if (png) return <img src={png} alt={buddy.name} width={size} height={size} style={{ objectFit: 'contain' }} />
@@ -26,8 +29,46 @@ export default function BuddyCharacter({
     <svg width={size} height={size} viewBox="0 0 120 120" role="img" aria-label={buddy.name}>
       <ellipse cx="60" cy="113" rx="26" ry="5" fill="rgba(74,70,64,0.15)" />
       {doll ? <Doll look={lookFor(buddy.key)} outfit={outfit} /> : <Animal f={featureFor(buddy.theme)} uid={buddy.key} outfit={outfit} />}
+      {/* toys are actually held/played by the character (no bubble) */}
+      {held.slice(-2).map((icon, k) => {
+        const p = TOY_PLACE[icon] ?? { x: 91, y: 90, size: 30 }
+        return (
+          <g key={k} transform={`translate(${p.x - p.size / 2} ${p.y - p.size / 2}) rotate(${p.rot ?? 0} ${p.size / 2} ${p.size / 2})`}>
+            <g className={'held-toy ' + (p.cls ?? '')}>
+              <ChoiceIcon name={icon} size={p.size} />
+            </g>
+            {(icon === 'flute' || icon === 'drum') && <MusicNotes />}
+          </g>
+        )
+      })}
     </svg>
   )
+}
+
+// Floating music notes rising from an instrument (a little tune).
+function MusicNotes() {
+  return (
+    <g className="mnotes">
+      {[0, 1, 2].map((k) => (
+        <g key={k} transform={`translate(${20 + k * 9} ${-2 - (k % 2) * 4})`}>
+          <g className="mnote" style={{ animationDelay: `${k * 0.5}s` }}>
+            <ellipse cx="0" cy="6" rx="3.4" ry="2.6" fill="#c07f7f" transform="rotate(-20 0 6)" />
+            <path d="M3 5 L3 -8 L9 -10 L9 -4" fill="none" stroke="#c07f7f" strokeWidth="1.8" strokeLinecap="round" />
+          </g>
+        </g>
+      ))}
+    </g>
+  )
+}
+
+// Where each toy sits on the character, and how it's "used".
+const TOY_PLACE: Record<string, { x: number; y: number; size: number; rot?: number; cls?: string }> = {
+  flute: { x: 66, y: 42, size: 42, rot: -18, cls: 'play-flute' }, // up near the mouth
+  drum: { x: 60, y: 82, size: 48, cls: 'play-drum' }, // in front of the belly
+  teddy: { x: 58, y: 80, size: 40, cls: 'hug' }, // hugged to the chest
+  crown: { x: 60, y: 14, size: 44 }, // worn on the head
+  compass: { x: 90, y: 84, size: 32, cls: 'inhand' }, // in the hand
+  workshop: { x: 90, y: 84, size: 32, cls: 'inhand' },
 }
 
 /* ------------------------------ Animals ------------------------------ */

@@ -685,3 +685,189 @@ button { font-family: inherit; cursor: pointer; }
 .panel--q .choice { padding: 26px 14px; border-radius: 22px; }
 .panel--q .choice__art { width: 78px; height: 78px; border-radius: 18px; }
 .panel--q .choice__label { font-size: 17px; line-height: 1.3; }
+
+/* ================= v11: cozy oil-pastel night meadow ================= */
+.scene { background: #4b5578; } /* night fallback behind the SVG */
+.scene.cozy::after { /* environment: cloudy → a cozy dim vignette */
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 40%, transparent 45%, rgba(40,44,74,0.28));
+}
+
+/* stars twinkle + gently swirl */
+.scene__stars .star { transform-box: fill-box; transform-origin: center; animation: twinkle 3.2s ease-in-out infinite; }
+@keyframes twinkle { 0%,100% { opacity: 0.35; transform: scale(0.7) rotate(0deg); } 50% { opacity: 1; transform: scale(1.1) rotate(45deg); } }
+.scene__stream { animation: shimmer 4s ease-in-out infinite; }
+@keyframes shimmer { 0%,100% { opacity: 0.45; } 50% { opacity: 0.65; } }
+
+/* companions walk alongside with a gentle hop */
+.scene__companions .companion { transform-box: fill-box; transform-origin: bottom center; }
+.scene__companions .companion { animation: palHop 1.4s ease-in-out infinite; }
+@keyframes palHop { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+
+/* toys held in the doll's hands bob softly */
+.held-toy { transform-box: fill-box; transform-origin: center; animation: heldBob 2.4s ease-in-out infinite; }
+@keyframes heldBob { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-2px) rotate(3deg); } }
+
+/* mute button */
+.quiz__mute { display: inline-flex; align-items: center; justify-content: center; color: #4a4640; padding: 8px 12px; }
+
+/* reveal tableau: companion beside the doll + collected caption */
+.reveal__hero { display: flex; align-items: flex-end; justify-content: center; gap: 4px; }
+.reveal__pal { display: inline-flex; align-self: center; animation: palHop 1.6s ease-in-out infinite; }
+.reveal__collected { font-size: 13px; color: var(--muted); margin: 2px 0 6px; font-style: italic; }
+
+/* ================= v12: held/played toys, periodic wind, Man-vs-Wild traversal ================= */
+
+/* toys the doll actually holds/plays (placement is on the parent <g>, so animate here) */
+.held-toy { transform-box: fill-box; transform-origin: center; }
+.held-toy.play-flute { animation: fluteSway 1.1s ease-in-out infinite; }
+@keyframes fluteSway { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+.held-toy.play-drum { animation: drumBounce 0.5s ease-in-out infinite; }
+@keyframes drumBounce { 0%,100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(1px) scaleY(0.94); } }
+.held-toy.hug { animation: hugSqueeze 2.6s ease-in-out infinite; }
+@keyframes hugSqueeze { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+.held-toy.inhand { animation: heldBob 2.4s ease-in-out infinite; }
+
+/* wind comes in GUSTS on a period (mostly calm, then a sweep) */
+.scene__autogust path {
+  transform-box: fill-box; opacity: 0;
+  animation: autoGust 8s ease-in-out infinite;
+}
+.scene__autogust.windy path { animation-duration: 4.5s; }
+@keyframes autoGust {
+  0%, 62% { opacity: 0; transform: translateX(0); }
+  72% { opacity: var(--wpeak, 0.5); }
+  100% { opacity: 0; transform: translateX(360px); }
+}
+
+/* ---- Man vs Wild: the doll traverses each round in the STYLE of its pick ---- */
+/* (feet keep stepping via .walking; these restyle the whole body) */
+.scene__hero.walking.traverse--run .scene__hero-bob { animation: tvDash 0.34s ease-in-out infinite; }
+@keyframes tvDash { 0%,100% { transform: translateY(0) rotate(7deg); } 50% { transform: translateY(-11px) rotate(9deg); } }
+
+.scene__hero.walking.traverse--cloud .scene__hero-bob { animation: tvStroll 0.9s ease-in-out infinite; }
+@keyframes tvStroll { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-3px) rotate(-1deg); } }
+
+.scene__hero.walking.traverse--flute .scene__hero-bob { animation: tvSkip 0.46s ease-in-out infinite; }
+@keyframes tvSkip { 0% { transform: translateY(0) rotate(-3deg); } 40% { transform: translateY(-14px) rotate(3deg); } 60% { transform: translateY(-2px) rotate(3deg); } 100% { transform: translateY(0) rotate(-3deg); } }
+
+.scene__hero.walking.traverse--drum .scene__hero-bob { animation: tvMarch 0.4s steps(2,end) infinite; }
+@keyframes tvMarch { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-9px) rotate(2deg); } }
+
+.scene__hero.walking.traverse--mountains .scene__hero-bob { animation: tvClimb 0.6s ease-in-out infinite; }
+@keyframes tvClimb { 0%,100% { transform: translateY(0) rotate(-8deg); } 50% { transform: translateY(-8px) rotate(-4deg); } }
+.scene__hero.walking.traverse--mountains .arm--l { animation: climbArmL 0.6s ease-in-out infinite; }
+.scene__hero.walking.traverse--mountains .arm--r { animation: climbArmR 0.6s ease-in-out infinite 0.3s; }
+@keyframes climbArmL { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-45deg); } }
+@keyframes climbArmR { 0%,100% { transform: rotate(0); } 50% { transform: rotate(45deg); } }
+
+.scene__hero.walking.traverse--workshop .scene__hero-bob { animation: tvTrudge 0.62s ease-in-out infinite; }
+@keyframes tvTrudge { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-4px) rotate(4deg); } }
+
+.scene__hero.walking.traverse--bunny .scene__hero-bob { animation: tvHop 0.6s cubic-bezier(.3,1.5,.5,1) infinite; }
+@keyframes tvHop { 0% { transform: translateY(0) scaleY(1); } 30% { transform: translateY(-20px) scaleY(1.08); } 55% { transform: translateY(0) scaleY(0.92); } 100% { transform: translateY(0) scaleY(1); } }
+
+.scene__hero.walking.traverse--bear .scene__hero-bob { animation: tvLumber 0.9s ease-in-out infinite; }
+@keyframes tvLumber { 0%,100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-4px) rotate(6deg); } }
+
+.scene__hero.walking.traverse--compass .scene__hero-bob { animation: tvStride 0.5s ease-in-out infinite; }
+@keyframes tvStride { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-8px) rotate(3deg); } }
+
+.scene__hero.walking.traverse--crown .scene__hero-bob { animation: tvGlide 0.8s ease-in-out infinite; }
+@keyframes tvGlide { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-5px) rotate(2deg); } }
+
+.scene__hero.walking.traverse--teddy .scene__hero-bob { animation: tvShuffle 0.7s ease-in-out infinite; }
+@keyframes tvShuffle { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-3px) rotate(2deg); } }
+
+.scene__hero.walking.traverse--house .scene__hero-bob { animation: tvMarch 0.5s steps(2,end) infinite; }
+
+/* ================= v13: buddies alongside (holding hands) + music notes ================= */
+
+/* the buddy sticks alongside the doll, holding hands, all through the story */
+.scene__pals {
+  position: absolute; left: 50%; top: 64%; height: 132px; margin-left: -66px;
+  transform: translateX(-72px); display: flex; align-items: flex-end; z-index: 1;
+}
+.scene__pals .pal { display: flex; align-items: flex-end; animation: palWalk 1.5s ease-in-out infinite; transform-origin: bottom center; }
+.scene__pals.walking .pal { animation: palWalkFast 0.5s ease-in-out infinite; }
+@keyframes palWalk { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes palWalkFast { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-9px) rotate(2deg); } }
+/* a little clasped-hands link between the buddy and the doll */
+.pal-link { position: absolute; right: -10px; bottom: 54px; width: 22px; height: 6px; border-radius: 6px; background: #e8b7a0; box-shadow: 0 0 0 1.6px #4a4640; }
+
+/* floating music notes rising from a played instrument (a tune) */
+.mnote { transform-box: fill-box; transform-origin: center; animation: mnoteFloat 1.8s ease-out infinite; }
+@keyframes mnoteFloat {
+  0% { opacity: 0; transform: translateY(6px) scale(0.6); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-24px) scale(1); }
+}
+
+/* ================= v14: significant env effects + bubbles activity ================= */
+
+/* windy: gusts come one after another, spontaneously — near-continuous sweeps */
+.scene__autogust.windy path { animation: autoGustFast 2.2s linear infinite; }
+@keyframes autoGustFast {
+  0% { opacity: 0; transform: translateX(0); }
+  12% { opacity: var(--wpeak, 0.6); }
+  88% { opacity: var(--wpeak, 0.6); }
+  100% { opacity: 0; transform: translateX(430px); }
+}
+
+/* cloudy: plenty of clouds drifting slowly across the sky */
+.cozicloud { transform-box: fill-box; animation-name: cloudDrift; animation-timing-function: linear; animation-iteration-count: infinite; }
+@keyframes cloudDrift { from { transform: translateX(30px); } to { transform: translateX(-240px); } }
+
+/* bubbles: drift up all around */
+.bubble { transform-box: fill-box; transform-origin: center; opacity: 0; animation: bubbleUp 5s ease-in infinite; }
+@keyframes bubbleUp {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.7); }
+  15% { opacity: 0.85; }
+  100% { opacity: 0; transform: translate(24px, -380px) scale(1.1); }
+}
+
+/* doll reaction + traversal for blowing bubbles */
+.scene__hero.react--bubbles .scene__hero-react { animation: rBlow 1.2s ease-in-out; transform-origin: bottom center; }
+@keyframes rBlow { 0%,100% { transform: rotate(0); } 40% { transform: rotate(7deg) translateY(-2px); } 70% { transform: rotate(5deg); } }
+.scene__hero.walking.traverse--bubbles .scene__hero-bob { animation: tvSkip 0.5s ease-in-out infinite; }
+
+/* ================= v15: continuous seamless walking treadmill ================= */
+/* terrain scrolls left forever; each tile is 800 wide so translateX(-800) loops with no seam */
+.scroll-far { animation: scrollX 46s linear infinite; }
+.scroll-mid { animation: scrollX 26s linear infinite; }
+.scroll-fore { animation: scrollX 15s linear infinite; }
+@keyframes scrollX { from { transform: translateX(0); } to { transform: translateX(-800px); } }
+
+/* the character drifts left/right as it walks (no longer pinned dead-centre) */
+.scene__hero-sway { animation: heroSway 6.5s ease-in-out infinite; }
+@keyframes heroSway { 0%,100% { transform: translateX(-16px); } 50% { transform: translateX(16px); } }
+
+/* bubbles drift up AND to the left (the buddy is heading right) */
+@keyframes bubbleUp {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.7); }
+  15% { opacity: 0.85; }
+  100% { opacity: 0; transform: translate(-64px, -360px) scale(1.1); }
+}
+
+/* ================= v16: tuned walk/scroll cadence (calm cozy stroll) ================= */
+/* slower, gentler terrain scroll so it reads as an easy walk */
+.scroll-far { animation-duration: 64s; }
+.scroll-mid { animation-duration: 36s; }
+.scroll-fore { animation-duration: 21s; }
+
+/* calmer, wider sway */
+.scene__hero-sway { animation-duration: 8s; }
+@keyframes heroSway { 0%,100% { transform: translateX(-12px); } 50% { transform: translateX(12px); } }
+
+/* a relaxed gait: stride + feet + arms all on one ~0.62s cadence, synced to the ground */
+.scene__hero.walking .scene__hero-bob { animation: stride 0.62s ease-in-out infinite; }
+.scene__hero.walking .foot--l { animation: step 0.62s ease-in-out infinite; }
+.scene__hero.walking .foot--r { animation: step 0.62s ease-in-out infinite 0.31s; }
+.scene__hero.walking .arm--l { animation: swingA 0.62s ease-in-out infinite; }
+.scene__hero.walking .arm--r { animation: swingA 0.62s ease-in-out infinite 0.31s; }
+/* softer stride bounce for a stroll (not a march) */
+@keyframes stride { 0%,100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-5px) rotate(1.5deg); } }
+
+/* companions keep pace with the same easy cadence */
+.scene__pals .pal { animation: palWalk 0.62s ease-in-out infinite; }
+@keyframes palWalk { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
