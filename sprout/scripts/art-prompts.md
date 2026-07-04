@@ -46,3 +46,39 @@ Match the forced-choice moments in `src/data/questions.ts`:
 - `flower-maker` — marigold
 
 After adding files, add their ids to `ART_MANIFEST` in `src/lib/art.ts`.
+
+---
+
+# v2 — Animated Story Scene (emoji-free, code-driven)
+
+The quiz now renders a continuous, wind-blown illustrated world (`SceneStage`) with
+the chosen buddy as the main character — all inline SVG, no emoji. To upgrade the
+placeholder SVG art with AI-generated illustration, produce PNGs (transparent where
+noted) and register their ids in `ART_MANIFEST` in `src/lib/art.ts`.
+
+## Doll/buddy cutouts (`public/art/buddy-<key>.png`, transparent)
+Full-body character cutout, front-facing, standing, feet visible, soft top-down light.
+`BuddyCharacter` uses it automatically in both the scene and the buddy picker.
+- `buddy-chloe` … `buddy-grady` — the 10 Apple Park Kids dolls, each in its catalog outfit.
+- `buddy-ziggy-zebra`, `buddy-cupcake-the-unicorn`, … — each named Farm Buddy plush.
+
+## Parallax scene layers (`public/art/scene-*.png`, wide, transparent)
+Match the beats in `src/data/scenes.ts` (hilltop → path → lookout → meadow → garden → bloom).
+- `scene-sky` — soft gradient sky with a warm sun.
+- `scene-hills-far` / `scene-hills-mid` — rolling pastel hills (parallax layers).
+- `scene-ground` + `scene-grass` — foreground meadow with tall grass (for wind sway).
+- `scene-flowers` — a row of flowers that open at the bloom beat.
+- `scene-visitor-fox` — the little friend that appears around Q4.
+
+## Choice icons (`public/art/choice-<name>.png`)
+One per `icon` key in `src/data/questions.ts`: run, kite, cloud, pinwheel, drum, waves,
+piano, flute, mountains, flowers, fireplace, workshop, fox, bunny, bear, monkey,
+compass, crown, teddy, house, gift.
+
+House style: soft organic children's-book illustration, muslin/bamboo texture, warm
+pastel palette (sage #A8C5A8, dusty rose #D4A5A5, terracotta, cream #F4EFE6), gentle
+hand-painted shading, no text.
+
+> Optional motion upgrade: replace the code scene with a **Lottie** (`public/anim/growth.json`)
+> or **Rive** (`public/anim/garden.riv`) file and drive it with the same `progress` value —
+> `SceneStage` already centralizes progress, so only that component changes.

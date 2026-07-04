@@ -1,17 +1,22 @@
-// The wordless picture-quiz. Each option scores exactly one archetype.
-// 5 forced-choice moments inside one continuous illustrated world.
+// The wordless picture-quiz: 6 short moments, 2 choices each, inside one
+// continuous illustrated world led by the chosen buddy. Choices render as SVG
+// icons (components/quiz/ChoiceIcon) — no emoji.
+//
+// Binary choices, but balanced so each of the 4 archetypes appears in exactly
+// 3 questions (adventurer: Q1/Q3/Q5, dreamer: Q2/Q4/Q5, nurturer: Q1/Q4/Q6,
+// maker: Q2/Q3/Q6) → a decisive winner from scoreAnswers().
 import type { ArchetypeId } from './archetypes'
 
 export type Choice = {
   id: string
   label: string
-  emoji: string
+  icon: string // key into components/quiz/ChoiceIcon
   scores: ArchetypeId
 }
 
 export type Question = {
   id: number
-  scene: string // short flavor line (spoken aloud / shown briefly)
+  scene: string
   prompt: string
   choices: Choice[]
 }
@@ -19,57 +24,56 @@ export type Question = {
 export const questions: Question[] = [
   {
     id: 1,
-    scene: 'A bag of mysterious seeds spills open on the table…',
-    prompt: 'Which seed would you sow?',
+    scene: 'You and your buddy reach the top of a breezy hill. The wind swirls all around!',
+    prompt: 'What do you do?',
     choices: [
-      { id: 'a', label: 'Veined hard seed', emoji: '🌰', scores: 'adventurer' },
-      { id: 'b', label: 'Furry light seed', emoji: '🪶', scores: 'dreamer' },
-      { id: 'c', label: 'Large plump seed', emoji: '🫘', scores: 'nurturer' },
-      { id: 'd', label: 'Shiny golden seed', emoji: '✨', scores: 'maker' },
+      { id: 'a', label: 'Run down into the wind', icon: 'run', scores: 'adventurer' },
+      { id: 'b', label: 'Curl up and watch the clouds', icon: 'cloud', scores: 'nurturer' },
     ],
   },
   {
     id: 2,
-    scene: 'While the seed settles in, you fancy some music…',
-    prompt: 'Which sound would you play?',
+    scene: 'Strolling down the path, you start to hum a little tune…',
+    prompt: 'Which sound feels right?',
     choices: [
-      { id: 'a', label: 'A marching drum', emoji: '🥁', scores: 'maker' },
-      { id: 'b', label: 'Ocean waves', emoji: '🌊', scores: 'adventurer' },
-      { id: 'c', label: 'Soft piano', emoji: '🎹', scores: 'nurturer' },
-      { id: 'd', label: 'A dreamy flute', emoji: '🪈', scores: 'dreamer' },
+      { id: 'a', label: 'A dreamy flute', icon: 'flute', scores: 'dreamer' },
+      { id: 'b', label: 'A bouncy drum', icon: 'drum', scores: 'maker' },
     ],
   },
   {
     id: 3,
-    scene: 'The sprout leans toward the window. Where does it want to go?',
-    prompt: 'Pick a window view.',
+    scene: 'You reach a lookout high above the valley.',
+    prompt: 'Where do you go next?',
     choices: [
-      { id: 'a', label: 'Tall wild mountains', emoji: '⛰️', scores: 'adventurer' },
-      { id: 'b', label: 'A field of flowers', emoji: '🌸', scores: 'dreamer' },
-      { id: 'c', label: 'A cozy fireplace', emoji: '🔥', scores: 'nurturer' },
-      { id: 'd', label: 'A busy workshop', emoji: '🧩', scores: 'maker' },
+      { id: 'a', label: 'Off to the wild mountains', icon: 'mountains', scores: 'adventurer' },
+      { id: 'b', label: 'Into the busy workshop', icon: 'workshop', scores: 'maker' },
     ],
   },
   {
     id: 4,
-    scene: 'A little visitor comes to say hello to your plant.',
+    scene: 'A little friend hops over to say hello.',
     prompt: 'Who do you hope it is?',
     choices: [
-      { id: 'a', label: 'A bounding fox', emoji: '🦊', scores: 'adventurer' },
-      { id: 'b', label: 'A shy bunny', emoji: '🐰', scores: 'dreamer' },
-      { id: 'c', label: 'A sleepy bear', emoji: '🐻', scores: 'nurturer' },
-      { id: 'd', label: 'A clever monkey', emoji: '🐵', scores: 'maker' },
+      { id: 'a', label: 'A soft, shy bunny', icon: 'bunny', scores: 'dreamer' },
+      { id: 'b', label: 'A cuddly sleepy bear', icon: 'bear', scores: 'nurturer' },
     ],
   },
   {
     id: 5,
-    scene: 'Your plant is ready to bloom. How do you celebrate?',
-    prompt: 'Choose a treat.',
+    scene: 'The sun begins to set — time for a treat!',
+    prompt: 'What sounds best?',
     choices: [
-      { id: 'a', label: 'Go exploring outside', emoji: '🧭', scores: 'adventurer' },
-      { id: 'b', label: 'Make a flower crown', emoji: '💐', scores: 'dreamer' },
-      { id: 'c', label: 'A warm cuddle nap', emoji: '🧸', scores: 'nurturer' },
-      { id: 'd', label: 'Build a tiny house', emoji: '🏠', scores: 'maker' },
+      { id: 'a', label: 'One more little adventure', icon: 'compass', scores: 'adventurer' },
+      { id: 'b', label: 'Make a flower crown', icon: 'crown', scores: 'dreamer' },
+    ],
+  },
+  {
+    id: 6,
+    scene: 'Back home, the garden is ready to bloom.',
+    prompt: 'How do you settle in?',
+    choices: [
+      { id: 'a', label: 'A warm cuddle nap', icon: 'teddy', scores: 'nurturer' },
+      { id: 'b', label: 'Build a cozy little house', icon: 'house', scores: 'maker' },
     ],
   },
 ]
