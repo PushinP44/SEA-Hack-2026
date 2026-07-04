@@ -150,7 +150,9 @@ button { font-family: inherit; cursor: pointer; }
 /* ---------- Quiz ---------- */
 .quiz {
   min-height: 100vh;
-  background: linear-gradient(180deg, #bcd6ea 0%, #f4d9cb 55%, #f0c9b6 100%);
+  position: relative;
+  overflow: hidden;
+  background: #bcd6ea; /* fallback; the animated SceneStage covers this */
   display: flex; align-items: stretch; justify-content: center;
 }
 .quiz__frame {
@@ -240,3 +242,446 @@ button { font-family: inherit; cursor: pointer; }
   .grid { grid-template-columns: repeat(2, 1fr); }
   .buddies { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ---------- Animated story scene (SceneStage) ---------- */
+.scene { position: absolute; inset: 0; z-index: 0; }
+.scene__svg { width: 100%; height: 100%; display: block; }
+
+/* swaying grass — wind speed comes from --sway (set per progress) */
+.blade {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation: sway var(--sway, 2s) ease-in-out infinite alternate;
+}
+@keyframes sway { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+
+.scene__clouds { animation: drift 46s linear infinite; }
+@keyframes drift { from { transform: translateX(60px); } to { transform: translateX(-320px); } }
+
+.scene__wind { animation: gust 3.4s ease-in-out infinite; }
+@keyframes gust { 0%,100% { transform: translateX(-14px); } 50% { transform: translateX(18px); } }
+
+.scene__petals .petal { transform-box: fill-box; opacity: 0; }
+.petal--0 { animation: fall0 7s linear infinite; }
+.petal--1 { animation: fall1 9s linear infinite 1.2s; }
+.petal--2 { animation: fall2 8s linear infinite 2.4s; }
+.petal--3 { animation: fall3 10s linear infinite 0.6s; }
+.petal--4 { animation: fall4 8.5s linear infinite 3s; }
+@keyframes fall0 { 0%{transform:translate(120px,40px);opacity:0} 12%{opacity:1} 100%{transform:translate(-40px,460px);opacity:0} }
+@keyframes fall1 { 0%{transform:translate(320px,20px);opacity:0} 12%{opacity:1} 100%{transform:translate(160px,480px);opacity:0} }
+@keyframes fall2 { 0%{transform:translate(520px,60px);opacity:0} 12%{opacity:1} 100%{transform:translate(360px,470px);opacity:0} }
+@keyframes fall3 { 0%{transform:translate(680px,10px);opacity:0} 12%{opacity:1} 100%{transform:translate(520px,485px);opacity:0} }
+@keyframes fall4 { 0%{transform:translate(240px,80px);opacity:0} 12%{opacity:1} 100%{transform:translate(80px,470px);opacity:0} }
+
+/* the buddy = main character, anchored on the hill; leans with the wind */
+.scene__hero {
+  position: absolute; left: 50%; top: 46%;
+  width: 132px; margin-left: -66px;
+  transform-origin: bottom center;
+  transition: transform 0.5s ease;
+  z-index: 1;
+}
+.scene__hero-bob { animation: bob 3.4s ease-in-out infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-7px) rotate(1deg); } }
+
+/* frosted panels float over the scene */
+.quiz__frame { position: relative; z-index: 2; }
+.quiz__body { justify-content: center; overflow-y: auto; }
+.panel {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(7px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 22px;
+  padding: 20px 22px 24px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.panel--wide { max-height: 78vh; overflow-y: auto; }
+.panel--bottom { margin-top: auto; }
+
+.choice__art {
+  display: flex; align-items: center; justify-content: center;
+  width: 60px; height: 60px;
+  background: rgba(255,255,255,0.7); border-radius: 16px;
+}
+.buddy__avatar { display: flex; align-items: center; justify-content: center; height: 56px; }
+
+.reveal__flower { display: block; margin: 0 auto 4px; }
+
+/* ---------- v3: cursor pops, leading doll, reveal wearing ---------- */
+.pop { transform-box: fill-box; transform-origin: center; animation: popfx 0.78s ease-out forwards; }
+@keyframes popfx {
+  0%   { transform: scale(0.2) rotate(0deg); opacity: 0; }
+  30%  { transform: scale(1) rotate(40deg); opacity: 1; }
+  100% { transform: scale(0.6) rotate(90deg); opacity: 0; }
+}
+
+/* the buddy leads from within the scene: lower onto the hill + a gentle walk */
+.scene__hero { top: 52%; transition: transform 0.25s ease; }
+.scene__hero-bob { animation: walk 1.5s ease-in-out infinite; }
+@keyframes walk {
+  0%,100% { transform: translateY(0) rotate(-2deg); }
+  50%     { transform: translateY(-6px) rotate(2deg); }
+}
+
+/* reveal: the dressed buddy, front and center */
+.reveal__hero {
+  display: flex; justify-content: center; margin-bottom: 6px;
+  animation: heroPop 0.5s ease;
+}
+@keyframes heroPop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.reveal__wearing { font-size: 14px; color: #5a5148; margin: 4px 0 12px; }
+.reveal__wearing strong { color: var(--rose-deep); }
+
+/* 2-up choice cards a touch larger now there are only two */
+.choices { gap: 16px; }
+.choice { padding: 22px 12px; }
+
+/* ---------- v4: lifted UI, click bursts, story-led reveal ---------- */
+
+/* Lift the question/growing card to the top so it never covers the walking doll */
+.quiz__body { justify-content: flex-start; padding-top: 8px; }
+.panel--top { margin-top: 0; margin-bottom: auto; }
+/* keep intro/buddy/reveal vertically centered within the scroll area */
+.quiz__body > .panel:not(.panel--top) { margin-top: auto; margin-bottom: auto; }
+
+/* the doll leads along clear ground in the lower third, below the card */
+.scene__hero { top: 64%; }
+
+/* click burst — themed particles fly out from the hero, then fade */
+.burst-part { transform-box: fill-box; transform-origin: center; animation: burstfly 0.95s ease-out forwards; }
+@keyframes burstfly {
+  0%   { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(var(--bx), var(--by)) scale(1); opacity: 0; }
+}
+
+/* persistent floating music notes */
+.scene__notes .note { transform-box: fill-box; transform-origin: center; animation: notefloat 3.2s ease-in-out infinite; }
+@keyframes notefloat {
+  0%,100% { transform: translateY(0) rotate(-4deg); opacity: 0.5; }
+  50%     { transform: translateY(-14px) rotate(6deg); opacity: 1; }
+}
+
+/* the little visitor gives a friendly hop */
+.scene__visitor { transform-box: fill-box; transform-origin: bottom center; animation: hop 2.4s ease-in-out infinite; }
+@keyframes hop { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+/* story-led reveal */
+.reveal__type { font-family: var(--serif); font-size: 26px; color: #4a4640; margin: 8px 0 2px; }
+.story--lead { background: rgba(255,255,255,0.92); padding: 20px; }
+.story--lead .story__title { font-size: 20px; margin-bottom: 10px; }
+.story--lead .story__body { font-size: 15px; line-height: 1.7; }
+
+/* v4.1: chosen subjects pop into the world and stay */
+.subject { transform-box: fill-box; transform-origin: bottom center;
+  animation: subjectpop 0.5s cubic-bezier(.2,1.5,.4,1) both, subjectbob 3.2s ease-in-out 0.5s infinite; }
+@keyframes subjectpop {
+  0%   { transform: scale(0) translateY(14px); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+@keyframes subjectbob {
+  0%,100% { transform: translateY(0) rotate(-1.5deg); }
+  50%     { transform: translateY(-5px) rotate(1.5deg); }
+}
+
+/* ---------- v5: wind-blown pop-ups, doll reacts, doll walks ---------- */
+
+/* subject now BLOWS in on the wind (from the windward side) then settles + bobs */
+.subject {
+  transform-box: fill-box; transform-origin: bottom center;
+  animation: subjectpop 0.7s cubic-bezier(.16,1,.3,1) both, subjectbob 3.2s ease-in-out 0.7s infinite;
+}
+@keyframes subjectpop {
+  0%   { transform: translateX(70px) rotate(20deg) scale(0.55); opacity: 0; }
+  45%  { opacity: 1; }
+  70%  { transform: translateX(-8px) rotate(-5deg) scale(1.06); opacity: 1; }
+  100% { transform: translateX(0) rotate(0deg) scale(1); opacity: 1; }
+}
+
+/* hero wrappers each own one transform channel so animations never fight inline styles */
+.scene__hero-lean, .scene__hero-gust, .scene__hero-bob { transform-origin: bottom center; }
+
+/* idle: gentle standing sway; walking: a bouncier stride */
+.scene__hero-bob { animation: idlesway 3.6s ease-in-out infinite; }
+@keyframes idlesway { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-3px) rotate(1deg); } }
+.scene__hero.walking .scene__hero-bob { animation: stride 0.5s ease-in-out infinite; }
+@keyframes stride {
+  0%,100% { transform: translateY(0) rotate(-2.5deg); }
+  50%     { transform: translateY(-7px) rotate(2.5deg); }
+}
+
+/* the doll feels a gust: braces/leans, then recovers (wind flows L→R) */
+.scene__hero.gusting .scene__hero-gust { animation: gustlean 1.1s ease-out; }
+@keyframes gustlean {
+  0%   { transform: rotate(0deg) translateX(0); }
+  25%  { transform: rotate(10deg) translateX(4px); }
+  55%  { transform: rotate(6deg) translateX(2px); }
+  100% { transform: rotate(0deg) translateX(0); }
+}
+
+/* legs actually step while walking (treadmill), plus a little arm swing */
+.foot, .arm { transform-box: fill-box; transform-origin: center; }
+.scene__hero.walking .foot--l { animation: step 0.5s ease-in-out infinite; }
+.scene__hero.walking .foot--r { animation: step 0.5s ease-in-out infinite 0.25s; }
+@keyframes step {
+  0%,100% { transform: translate(-2px, 0); }
+  50%     { transform: translate(3px, -4px); }
+}
+.scene__hero.walking .arm--l { animation: swingA 0.5s ease-in-out infinite; }
+.scene__hero.walking .arm--r { animation: swingA 0.5s ease-in-out infinite 0.25s; }
+@keyframes swingA { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+
+/* the gust visibly flows across the whole scene */
+.gust-sweep path { transform-box: fill-box; animation: sweep 1s ease-out forwards; }
+@keyframes sweep {
+  0%   { transform: translateX(0); opacity: 0; }
+  20%  { opacity: 0.8; }
+  100% { transform: translateX(780px); opacity: 0; }
+}
+
+/* ================= v6: a bespoke animation for every chosen action ================= */
+
+/* shared entrance (composes with each icon's own transform on the inner .subj) */
+.subject { animation: subjEnter 0.5s ease both; }
+@keyframes subjEnter { 0% { opacity: 0; transform: translateX(46px); } 100% { opacity: 1; transform: translateX(0); } }
+
+.subj { transform-box: fill-box; transform-origin: bottom center; }
+
+/* the doll's reaction wrapper (new motion channel); gust no longer leans the doll */
+.scene__hero-react { transform-origin: bottom center; }
+.scene__hero.gusting .scene__hero-gust { animation: none; }
+
+/* emitter particles: horizontal spread via --ex, motion per icon */
+.emp { transform-box: fill-box; transform-origin: center; opacity: 0; }
+.emp--0 { --ex: -18px; } .emp--1 { --ex: -8px; } .emp--2 { --ex: 2px; } .emp--3 { --ex: 12px; } .emp--4 { --ex: 20px; }
+
+/* ---- run: legs pump, dash, speed lines, dust ---- */
+.subj--run { animation: sRunIn 0.5s ease-out both, sRunLoop 0.6s ease-in-out 0.5s infinite; }
+@keyframes sRunIn { 0% { transform: translateX(60px) scale(0.7); } 100% { transform: translateX(0) scale(1); } }
+@keyframes sRunLoop { 0%,100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-3px); } }
+.subj--run .pt-run-limb { transform-box: fill-box; transform-origin: top center; }
+.subj--run .pt-run-limb--a { animation: legPump 0.4s ease-in-out infinite; }
+.subj--run .pt-run-limb--b { animation: legPump 0.4s ease-in-out infinite reverse; }
+@keyframes legPump { 0%,100% { transform: rotate(-16deg); } 50% { transform: rotate(16deg); } }
+.subj--run .pt-run-speed { animation: speedFlick 0.5s linear infinite; }
+@keyframes speedFlick { 0% { opacity: 0.3; transform: translateX(0); } 50% { opacity: 1; } 100% { opacity: 0.3; transform: translateX(-8px); } }
+.em--run .emp { fill: #cbb9a6; animation: emDust 0.9s ease-out infinite; }
+.em--run .emp--1 { animation-delay: 0.15s; } .em--run .emp--2 { animation-delay: 0.3s; } .em--run .emp--3 { animation-delay: 0.45s; } .em--run .emp--4 { animation-delay: 0.6s; }
+@keyframes emDust { 0% { opacity: 0; transform: translate(10px, 26px) scale(0.6); } 30% { opacity: 0.8; } 100% { opacity: 0; transform: translate(-30px, 20px) scale(1.4); } }
+
+/* ---- cloud: float, squash, rain ---- */
+.subj--cloud { animation: sCloudIn 0.6s ease-out both, sCloudLoop 3.4s ease-in-out 0.6s infinite; }
+@keyframes sCloudIn { 0% { transform: translateY(-34px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes sCloudLoop { 0%,100% { transform: translateY(0) scaleX(1); } 50% { transform: translateY(-6px) scaleX(1.05); } }
+.em--cloud .emp { fill: #8fb8d6; animation: emRain 1.5s linear infinite; }
+.em--cloud .emp--1 { animation-delay: 0.3s; } .em--cloud .emp--2 { animation-delay: 0.6s; } .em--cloud .emp--3 { animation-delay: 0.9s; } .em--cloud .emp--4 { animation-delay: 1.2s; }
+@keyframes emRain { 0% { opacity: 0; transform: translate(var(--ex), -4px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--ex), 44px); } }
+
+/* ---- flute: sway, notes rise ---- */
+.subj--flute { animation: sFluteIn 0.6s ease-out both, sFluteLoop 2.2s ease-in-out 0.6s infinite; }
+@keyframes sFluteIn { 0% { transform: rotate(140deg) scale(0.4); opacity: 0; } 100% { transform: rotate(0) scale(1); opacity: 1; } }
+@keyframes sFluteLoop { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+.em--flute .emp { fill: #c07f7f; animation: emRise 1.8s ease-out infinite; }
+.em--flute .emp--1 { animation-delay: 0.4s; } .em--flute .emp--2 { animation-delay: 0.8s; } .em--flute .emp--3 { animation-delay: 1.2s; } .em--flute .emp--4 { animation-delay: 1.6s; }
+@keyframes emRise { 0% { opacity: 0; transform: translate(var(--ex), 0) scale(0.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(var(--ex) + 8px), -40px) scale(1); } }
+
+/* ---- drum: thump, sticks tap, beat rings ---- */
+.subj--drum { animation: sDrumIn 0.6s cubic-bezier(.2,1.6,.4,1) both, sDrumLoop 0.5s ease-in-out 0.6s infinite; }
+@keyframes sDrumIn { 0% { transform: translateY(-46px); opacity: 0; } 60% { opacity: 1; } 100% { transform: translateY(0); } }
+@keyframes sDrumLoop { 0%,100% { transform: scaleY(1) translateY(0); } 50% { transform: scaleY(0.9) translateY(2px); } }
+.subj--drum .pt-drum-stick { transform-box: fill-box; transform-origin: bottom center; }
+.subj--drum .pt-drum-stick--a { animation: stickTap 0.5s ease-in-out infinite; }
+.subj--drum .pt-drum-stick--b { animation: stickTap 0.5s ease-in-out infinite 0.25s; }
+@keyframes stickTap { 0%,100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+.em--drum .emp { fill: none; stroke: #ffffff; stroke-width: 2; animation: emRing 0.8s ease-out infinite; }
+.em--drum .emp--0 { --ey: 6px; } .em--drum .emp--1 { --ey: 6px; animation-delay: 0.4s; }
+.em--drum .emp--2, .em--drum .emp--3, .em--drum .emp--4 { display: none; }
+@keyframes emRing { 0% { opacity: 0.8; transform: translateY(var(--ey, 6px)) scale(0.2); } 100% { opacity: 0; transform: translateY(var(--ey, 6px)) scale(3.2); } }
+
+/* ---- mountains: rise from ground, breathe, sun bob, snow shimmer ---- */
+.subj--mountains { animation: sMtnIn 0.7s cubic-bezier(.2,1,.3,1) both, sMtnLoop 4s ease-in-out 0.7s infinite; }
+@keyframes sMtnIn { 0% { transform: translateY(46px) scaleY(0.6); opacity: 0; } 100% { transform: translateY(0) scaleY(1); opacity: 1; } }
+@keyframes sMtnLoop { 0%,100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+.subj--mountains .pt-mtn-sun { transform-box: fill-box; transform-origin: center; animation: sunBob 3s ease-in-out infinite; }
+@keyframes sunBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.em--mountains .emp { fill: #ffffff; animation: emShimmer 2s ease-in-out infinite; }
+.em--mountains .emp--1 { animation-delay: 0.5s; } .em--mountains .emp--2 { animation-delay: 1s; } .em--mountains .emp--3 { animation-delay: 1.5s; } .em--mountains .emp--4 { animation-delay: 0.7s; }
+@keyframes emShimmer { 0%,100% { opacity: 0; transform: translate(var(--ex), -6px) scale(0.4); } 50% { opacity: 0.9; transform: translate(var(--ex), -6px) scale(1); } }
+
+/* ---- workshop: gear spins, wrench nudges, sparks ---- */
+.subj--workshop { animation: sWsIn 0.5s ease-out both; }
+@keyframes sWsIn { 0% { transform: scale(0.4) rotate(-30deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+.subj--workshop .pt-ws-gear { transform-box: fill-box; transform-origin: center; animation: gearSpin 2.4s linear infinite; }
+@keyframes gearSpin { to { transform: rotate(360deg); } }
+.subj--workshop .pt-ws-wrench { transform-box: fill-box; transform-origin: center; animation: wrenchNudge 1.6s ease-in-out infinite; }
+@keyframes wrenchNudge { 0%,100% { transform: rotate(0); } 40% { transform: rotate(-14deg); } }
+.em--workshop .emp { fill: #e6c766; animation: emSpark 1s ease-out infinite; }
+.em--workshop .emp--1 { animation-delay: 0.2s; } .em--workshop .emp--2 { animation-delay: 0.5s; } .em--workshop .emp--3 { animation-delay: 0.7s; } .em--workshop .emp--4 { animation-delay: 0.9s; }
+@keyframes emSpark { 0% { opacity: 0; transform: translate(6px, 6px) scale(0.3); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(var(--ex) + 14px), -14px) scale(0.8); } }
+
+/* ---- bunny: hop, ears flop, landing dust ---- */
+.subj--bunny { animation: sBunnyIn 0.6s ease-out both, sBunnyLoop 0.9s ease-in-out 0.6s infinite; }
+@keyframes sBunnyIn { 0% { transform: translate(50px, -20px) scale(0.6); opacity: 0; } 100% { transform: translate(0,0) scale(1); opacity: 1; } }
+@keyframes sBunnyLoop { 0%,100% { transform: translateY(0) scaleY(1); } 30% { transform: translateY(-16px) scaleY(1.08); } 60% { transform: translateY(0) scaleY(0.92); } }
+.subj--bunny .pt-bunny-ear { transform-box: fill-box; transform-origin: bottom center; }
+.subj--bunny .pt-bunny-ear--a { animation: earFlop 0.9s ease-in-out infinite; }
+.subj--bunny .pt-bunny-ear--b { animation: earFlop 0.9s ease-in-out infinite 0.08s; }
+@keyframes earFlop { 0%,100% { transform: rotate(-4deg); } 40% { transform: rotate(8deg); } }
+.em--bunny .emp { fill: #cbb9a6; animation: emHopDust 0.9s ease-out infinite; }
+.em--bunny .emp--2, .em--bunny .emp--3, .em--bunny .emp--4 { display: none; }
+@keyframes emHopDust { 0%,55% { opacity: 0; transform: translate(var(--ex), 34px) scale(0.4); } 60% { opacity: 0.7; } 100% { opacity: 0; transform: translate(calc(var(--ex) * 2), 30px) scale(1.2); } }
+
+/* ---- bear: lumbering waddle + breathe (no emitter) ---- */
+.subj--bear { animation: sBearIn 0.7s ease-out both, sBearLoop 2.6s ease-in-out 0.7s infinite; }
+@keyframes sBearIn { 0% { transform: translateX(-46px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+@keyframes sBearLoop { 0%,100% { transform: rotate(-3deg) scale(1); } 50% { transform: rotate(3deg) scale(1.03); } }
+
+/* ---- compass: spin in, needle spins then wobbles, pivot sparkle ---- */
+.subj--compass { animation: sCompassIn 0.7s ease-out both; }
+@keyframes sCompassIn { 0% { transform: rotate(-320deg) scale(0.4); opacity: 0; } 100% { transform: rotate(0) scale(1); opacity: 1; } }
+.subj--compass .pt-compass-needle { transform-box: fill-box; transform-origin: 50% 60%; animation: needleSpin 2.6s cubic-bezier(.3,0,.2,1) infinite; }
+@keyframes needleSpin { 0% { transform: rotate(0); } 55% { transform: rotate(340deg); } 70% { transform: rotate(330deg); } 82% { transform: rotate(338deg); } 100% { transform: rotate(360deg); } }
+.em--compass .emp { fill: #f0d089; animation: emTwinkle 1.4s ease-in-out infinite; }
+.em--compass .emp--1 { animation-delay: 0.5s; } .em--compass .emp--2 { animation-delay: 0.9s; } .em--compass .emp--3, .em--compass .emp--4 { display: none; }
+@keyframes emTwinkle { 0%,100% { opacity: 0; transform: translate(var(--ex), 20px) scale(0.3); } 50% { opacity: 1; transform: translate(var(--ex), 20px) scale(1); } }
+
+/* ---- crown: descend, regal bob, gems twinkle, sparkles ---- */
+.subj--crown { animation: sCrownIn 0.7s cubic-bezier(.2,1.3,.4,1) both, sCrownLoop 3s ease-in-out 0.7s infinite; }
+@keyframes sCrownIn { 0% { transform: translateY(-54px) rotate(-8deg); opacity: 0; } 100% { transform: translateY(0) rotate(0); opacity: 1; } }
+@keyframes sCrownLoop { 0%,100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-3px) rotate(1.5deg); } }
+.subj--crown .pt-crown-gem { transform-box: fill-box; transform-origin: center; animation: gemTwinkle 1.6s ease-in-out infinite; }
+.subj--crown .pt-crown-gem:nth-of-type(2) { animation-delay: 0.2s; }
+.subj--crown .pt-crown-gem:nth-of-type(3) { animation-delay: 0.4s; }
+.subj--crown .pt-crown-gem:nth-of-type(4) { animation-delay: 0.6s; }
+@keyframes gemTwinkle { 0%,100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.25); filter: brightness(1.5); } }
+.em--crown .emp { fill: #f0d089; animation: emRise 1.7s ease-out infinite; }
+.em--crown .emp--1 { animation-delay: 0.4s; } .em--crown .emp--2 { animation-delay: 0.8s; } .em--crown .emp--3 { animation-delay: 1.2s; } .em--crown .emp--4 { animation-delay: 0.6s; }
+
+/* ---- teddy: cozy breathe + tilt, heart floats ---- */
+.subj--teddy { animation: sTeddyIn 0.6s ease-out both, sTeddyLoop 2.8s ease-in-out 0.6s infinite; }
+@keyframes sTeddyIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes sTeddyLoop { 0%,100% { transform: scale(1) rotate(-2deg); } 50% { transform: scale(1.05) rotate(2deg); } }
+.em--teddy .emp { fill: #d99aa2; animation: emRise 2.4s ease-out infinite; }
+.em--teddy .emp--1, .em--teddy .emp--2, .em--teddy .emp--3, .em--teddy .emp--4 { display: none; }
+
+/* ---- house: builds piece by piece, door twinkles, chimney smoke ---- */
+.subj--house { animation: subjEnter 0.4s ease both; }
+.subj--house .pt-house-wall { transform-box: fill-box; transform-origin: bottom center; animation: wallUp 0.5s ease-out 0.15s both; }
+@keyframes wallUp { 0% { transform: scaleY(0); } 100% { transform: scaleY(1); } }
+.subj--house .pt-house-roof { transform-box: fill-box; transform-origin: center; animation: roofDrop 0.4s ease-out 0.5s both; }
+@keyframes roofDrop { 0% { transform: translateY(-30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+.subj--house .pt-house-door { transform-box: fill-box; transform-origin: center; animation: doorPop 0.3s ease-out 0.8s both, doorTwinkle 2.2s ease-in-out 1.1s infinite; }
+@keyframes doorPop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+@keyframes doorTwinkle { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+.em--house .emp { fill: #b9b3ab; animation: emSmoke 2.6s ease-out infinite; }
+.em--house .emp--1 { animation-delay: 0.9s; } .em--house .emp--2 { animation-delay: 1.8s; } .em--house .emp--3, .em--house .emp--4 { display: none; }
+@keyframes emSmoke { 0% { opacity: 0; transform: translate(-8px, -8px) scale(0.5); } 20% { opacity: 0.7; } 100% { opacity: 0; transform: translate(4px, -46px) scale(1.6); } }
+
+/* ================= the doll's per-choice reactions ================= */
+.scene__hero.react--run .scene__hero-react { animation: rRun 1.2s ease-in-out; }
+@keyframes rRun { 0%,100% { transform: translateY(0) rotate(0); } 20% { transform: translateY(-8px) rotate(6deg); } 40% { transform: translateY(0) rotate(4deg); } 60% { transform: translateY(-8px) rotate(6deg); } 80% { transform: translateY(0) rotate(4deg); } }
+
+.scene__hero.react--cloud .scene__hero-react { animation: rCloud 1.4s ease-in-out; transform-origin: bottom center; }
+@keyframes rCloud { 0%,100% { transform: rotate(0) translateY(0); } 40% { transform: rotate(-9deg) translateY(-3px); } 70% { transform: rotate(-7deg) translateY(-3px); } }
+
+.scene__hero.react--flute .scene__hero-react { animation: rSway 1.4s ease-in-out; }
+@keyframes rSway { 0%,100% { transform: rotate(0); } 25% { transform: rotate(7deg); } 50% { transform: rotate(-7deg); } 75% { transform: rotate(5deg); } }
+
+.scene__hero.react--drum .scene__hero-react { animation: rBounce 1.3s ease-in-out; }
+.scene__hero.react--drum.rv2 .scene__hero-react { animation: rHeadBob 1.3s ease-in-out; }
+@keyframes rBounce { 0%,100% { transform: translateY(0); } 15% { transform: translateY(-14px); } 30% { transform: translateY(0); } 45% { transform: translateY(-12px); } 60% { transform: translateY(0); } 75% { transform: translateY(-8px); } 90% { transform: translateY(0); } }
+@keyframes rHeadBob { 0%,100% { transform: rotate(0) translateY(0); } 25% { transform: rotate(5deg) translateY(-4px); } 50% { transform: rotate(-5deg) translateY(0); } 75% { transform: rotate(5deg) translateY(-4px); } }
+
+.scene__hero.react--mountains .scene__hero-react { animation: rAwe 1.4s ease-out; transform-origin: bottom center; }
+@keyframes rAwe { 0% { transform: rotate(0); } 40% { transform: rotate(-8deg) translateY(-4px); } 100% { transform: rotate(0); } }
+.scene__hero.react--mountains .arm--l { animation: armUpL 1.4s ease-out; }
+.scene__hero.react--mountains .arm--r { animation: armUpR 1.4s ease-out; }
+@keyframes armUpL { 0%,100% { transform: rotate(0); } 45% { transform: rotate(40deg); } }
+@keyframes armUpR { 0%,100% { transform: rotate(0); } 45% { transform: rotate(-40deg); } }
+
+.scene__hero.react--workshop .scene__hero-react { animation: rNod 1.2s ease-in-out; }
+@keyframes rNod { 0%,100% { transform: rotate(0); } 20% { transform: rotate(4deg); } 40% { transform: rotate(-3deg); } 60% { transform: rotate(4deg); } 80% { transform: rotate(-3deg); } }
+
+.scene__hero.react--bunny .scene__hero-react { animation: rJump 1.3s cubic-bezier(.2,1.4,.4,1); }
+@keyframes rJump { 0% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-22px) rotate(-6deg); } 45% { transform: translateY(0) rotate(0); } 60% { transform: translateY(-12px) rotate(6deg); } 80% { transform: translateY(0); } }
+
+.scene__hero.react--bear .scene__hero-react { animation: rHug 1.4s ease-in-out; }
+@keyframes rHug { 0%,100% { transform: scale(1) rotate(0); } 40% { transform: scale(0.92, 1.02) rotate(-4deg); } 70% { transform: scale(0.94, 1.01) rotate(3deg); } }
+
+.scene__hero.react--compass .scene__hero-react { animation: rSpin 1.3s ease-in-out; transform-origin: bottom center; }
+@keyframes rSpin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+
+.scene__hero.react--crown .scene__hero-react { animation: rCurtsy 1.4s ease-in-out; transform-origin: bottom center; }
+@keyframes rCurtsy { 0%,100% { transform: translateY(0) scaleY(1) rotate(0); } 45% { transform: translateY(6px) scaleY(0.9) rotate(-3deg); } 60% { transform: translateY(6px) scaleY(0.9) rotate(3deg); } }
+
+.scene__hero.react--teddy .scene__hero-react { animation: rRock 1.5s ease-in-out; }
+@keyframes rRock { 0%,100% { transform: rotate(0); } 30% { transform: rotate(-5deg); } 65% { transform: rotate(5deg); } }
+
+.scene__hero.react--house .scene__hero-react { animation: rClap 1.2s ease-in-out; }
+@keyframes rClap { 0%,100% { transform: translateY(0); } 25% { transform: translateY(-6px); } 50% { transform: translateY(0); } 75% { transform: translateY(-6px); } }
+.scene__hero.react--house .arm--l { animation: clapL 0.3s ease-in-out 3; }
+.scene__hero.react--house .arm--r { animation: clapR 0.3s ease-in-out 3; }
+@keyframes clapL { 0%,100% { transform: rotate(0); } 50% { transform: rotate(24deg); } }
+@keyframes clapR { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-24deg); } }
+
+/* ---------- v7: centered intro/reveal, "2 you may like" ---------- */
+.quiz__body--center { justify-content: center; padding-top: 16px; padding-bottom: 24px; }
+.quiz__body--top { justify-content: flex-start; padding-top: 10px; }
+
+.suggest { width: 100%; margin-bottom: 14px; }
+.suggest__label { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; color: var(--muted); text-transform: uppercase; margin: 2px 0 8px; }
+.suggest__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.suggest__card {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  background: rgba(255, 255, 255, 0.92); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 8px; text-align: center; transition: box-shadow .15s, transform .15s;
+}
+.suggest__card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.suggest__thumb { display: flex; opacity: 0.9; }
+.suggest__name { font-size: 12px; font-weight: 700; color: #4a4640; line-height: 1.2; min-height: 2.4em; }
+.suggest__price { font-size: 12px; display: flex; gap: 6px; align-items: baseline; }
+
+/* ---------- v8: true-center intro/reveal; doll-wearing suggestion thumbs ---------- */
+/* Float the top bar so it doesn't consume layout height — the panel then centers
+   in the FULL viewport, not the space below the bar. */
+.quiz__top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 4;
+  pointer-events: none;
+}
+.quiz__top > * { pointer-events: auto; }
+.quiz__body { min-height: 100vh; }
+.quiz__body--center { justify-content: center; padding-top: 0; padding-bottom: 0; }
+.quiz__body--top { justify-content: flex-start; padding-top: 62px; } /* clear the floating bar */
+
+/* suggestion thumb now holds a little doll wearing the item */
+.suggest__thumb { display: flex; align-items: center; justify-content: center; height: 66px; }
+.quiz__body--scroll { justify-content: flex-start; padding-top: 62px; padding-bottom: 30px; }
+
+/* ---------- v9: "how to choose your buddy" mode step ---------- */
+.modes { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+.mode-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  padding: 16px 18px; text-align: left; transition: transform .12s, box-shadow .12s, border-color .12s;
+}
+.mode-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--sage); }
+.mode-card__title { font-family: var(--serif); font-size: 19px; color: #4a4640; font-weight: 700; }
+.mode-card__sub { font-size: 13px; color: var(--muted); }
+.mode-card--surprise {
+  background: linear-gradient(120deg, var(--terra), var(--rose-deep));
+  border: none;
+}
+.mode-card--surprise .mode-card__title { color: #fff; }
+.mode-card--surprise .mode-card__sub { color: rgba(255,255,255,0.9); }
+
+/* ---------- v10: bigger question box + font ---------- */
+.panel--q { padding: 26px 26px 30px; }
+.panel--q .quiz__scene { font-size: 18px; line-height: 1.55; margin-bottom: 12px; max-width: 38ch; }
+.panel--q .quiz__q { font-size: 29px; margin: 10px 0 24px; }
+.panel--q .choices { gap: 18px; }
+.panel--q .choice { padding: 26px 14px; border-radius: 22px; }
+.panel--q .choice__art { width: 78px; height: 78px; border-radius: 18px; }
+.panel--q .choice__label { font-size: 17px; line-height: 1.3; }

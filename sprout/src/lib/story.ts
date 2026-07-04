@@ -42,17 +42,21 @@ export function templateStory(input: {
   buddy: Buddy
   archetype: Archetype
   product: Product
+  choiceLabels?: string[]
   childName?: string
 }): Story {
   const hero = input.childName ? `${input.childName} and ${input.buddy.name}` : input.buddy.name
+  const beats = (input.choiceLabels ?? []).map((c) => c.toLowerCase())
+  const adventure = beats.length ? `They chose to ${beats.slice(0, 4).join(', then ')}. ` : ''
+  const loves = beats.length ? beats.slice(0, 2).join(' and ') : 'to play'
   return {
-    title: `${input.buddy.name} and the ${input.archetype.flower}`,
+    title: `${input.buddy.name}'s Big Day`,
     body:
-      `Once upon a quiet morning in Apple Park, ${hero} planted a tiny seed and waited. ` +
-      `Day by day it grew — a little ${input.archetype.flower.toLowerCase()} unfurling in the sun. ` +
-      `${input.buddy.name} is ${input.archetype.title.replace('The ', '').toLowerCase()} at heart: ` +
-      `${input.archetype.blurb} ` +
-      `And when the flower finally bloomed, it whispered a secret — that the perfect companion for this ` +
-      `adventure was waiting all along: the ${input.product.name}. The end… or really, just the beginning.`,
+      `One breezy morning in Apple Park, ${hero} set off on a little adventure. ` +
+      adventure +
+      `What a day for ${input.archetype.title.replace('The ', 'a little ').toLowerCase()}! ` +
+      `And waiting at home was the perfect outfit — the ${input.product.name} — comfy and soft, ` +
+      `just right for someone who loves ${loves}. ${input.buddy.name} put it on, gave a happy twirl, and beamed. ` +
+      `The end… or really, just the beginning.`,
   }
 }

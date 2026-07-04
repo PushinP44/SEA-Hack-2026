@@ -1,20 +1,40 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { questions } from '../data/questions'
-import { dolls, farmBuddies, type Buddy } from '../data/buddies'
+import { dolls, farmBuddies, allBuddies, type Buddy } from '../data/buddies'
 import { scoreAnswers, type Answer } from '../lib/scoring'
-import { archetypes } from '../data/archetypes'
-import { matchProduct, price } from '../lib/match'
+import { archetypes, type ArchetypeId } from '../data/archetypes'
+import { matchProduct, matchOutfit, moreSuggestions, outfitColor, price } from '../lib/match'
+import type { Product } from '../data/catalog'
 import { fetchStory, type Story } from '../lib/story'
+import { MAX_PROGRESS } from '../data/scenes'
+import SceneStage from '../components/quiz/SceneStage'
+import BuddyCharacter, { type Outfit } from '../components/quiz/BuddyCharacter'
+import ChoiceCard from '../components/quiz/ChoiceCard'
+import ChoiceIcon from '../components/quiz/ChoiceIcon'
 
 type Step =
   | { kind: 'intro' }
+  | { kind: 'mode' }
   | { kind: 'buddy' }
   | { kind: 'question'; index: number }
   | { kind: 'growing' }
   | { kind: 'reveal' }
 
-const GROW_STAGES = ['🌱', '🌿', '🪴', '🌸']
+type PickMode = 'have' | 'want' | null
+
+// Per-archetype bloom colour for the reveal flower (no emoji).
+const ARCH_COLOR: Record<ArchetypeId, string> = {
+  adventurer: '#e6c766',
+  dreamer: '#d99aa2',
+  nurturer: '#b9a9df',
+  maker: '#e08a4e',
+}
+
+// Dolls → a wearable outfit; animals → a themed companion product.
+function pickProduct(winnerId: ArchetypeId, b: Buddy): Product {
+  return b.kind === 'doll' ? matchOutfit(winnerId) : matchProduct(winnerId, b.theme)
+}
 
 export default function Quiz() {
   const navigate = useNavigate()
@@ -22,28 +42,89 @@ export default function Quiz() {
   const [buddy, setBuddy] = useState<Buddy | null>(null)
   const [answers, setAnswers] = useState<Answer[]>([])
   const [story, setStory] = useState<Story | null>(null)
-  const [growStage, setGrowStage] = useState(0)
   const [childName, setChildName] = useState('')
   const [added, setAdded] = useState(false)
+  const [pickMode, setPickMode] = useState<PickMode>(null)
+  // Click impact: the icon of the last-picked choice + a nonce so the scene
+  // re-fires a burst even if the same icon is picked twice.
+  const [burst, setBurst] = useState<{ icon: string; n: number } | undefined>()
+  const burstN = useRef(0)
 
-  // Deterministic result (only meaningful once all answers are in).
+  // Icons of the answers on the current path, in question order — each one is
+  // dropped into the scene along the path so the child watches the story build.
+  const chosen = [...answers]
+    .sort((a, b) => a.questionId - b.questionId)
+    .map((a) => questions.find((q) => q.id === a.questionId)?.choices.find((c) => c.id === a.choiceId)?.icon)
+    .filter((x): x is string => Boolean(x))
+
   const { winner } = scoreAnswers(answers)
   const archetype = archetypes[winner]
-  const product = buddy ? matchProduct(winner, buddy.theme) : matchProduct(winner)
+  // Dolls are shown *wearing* a suggested outfit; Farm-Buddy animals get a
+  // themed companion product (an animal in a dress reads wrong).
+  const isDoll = buddy?.kind === 'doll'
+  const product = buddy ? pickProduct(winner, buddy) : matchProduct(winner)
+  const outfit: Outfit | undefined =
+    buddy && isDoll ? { color: outfitColor(product, ARCH_COLOR[winner]), label: product.name } : undefined
+  // Two extra picks for the reveal's "2 you may like" row.
+  const suggestions = buddy ? moreSuggestions(winner, [product.id]) : []
+
+  // The scene's progress (0..MAX) is derived from the current step, so the
+  // world stays in lockstep with the questions and rewinds on Back.
+  const progress =
+    step.kind === 'question'
+      ? step.index
+      : step.kind === 'growing' || step.kind === 'reveal'
+        ? MAX_PROGRESS
+        : 0
 
   function reset() {
     setStep({ kind: 'intro' })
     setBuddy(null)
     setAnswers([])
     setStory(null)
-    setGrowStage(0)
     setChildName('')
     setAdded(false)
+    setBurst(undefined)
+    setPickMode(null)
+  }
+
+  function choose(b: Buddy) {
+    setBuddy(b)
+    setStep({ kind: 'question', index: 0 })
+  }
+
+  function surpriseMe() {
+    setPickMode(null)
+    const b = allBuddies[Math.floor(Math.random() * allBuddies.length)]
+    choose(b)
+  }
+
+  function goBack() {
+    if (step.kind === 'question') {
+      if (step.index === 0) {
+        setStep({ kind: 'buddy' })
+      } else {
+        const prevId = questions[step.index].id
+        setAnswers((a) => a.filter((x) => x.questionId !== prevId))
+        setStep({ kind: 'question', index: step.index - 1 })
+      }
+    } else if (step.kind === 'buddy') {
+      setStep({ kind: 'mode' })
+    } else if (step.kind === 'mode') {
+      setStep({ kind: 'intro' })
+    } else if (step.kind === 'intro') {
+      navigate('/')
+    } else {
+      reset()
+    }
   }
 
   function pickChoice(questionId: number, choiceId: string, index: number) {
     const next = [...answers.filter((a) => a.questionId !== questionId), { questionId, choiceId }]
     setAnswers(next)
+    // Fire a themed burst in the scene for the tapped choice.
+    const icon = questions[index].choices.find((c) => c.id === choiceId)?.icon
+    if (icon) setBurst({ icon, n: ++burstN.current })
     if (index + 1 < questions.length) {
       setStep({ kind: 'question', index: index + 1 })
     } else {
@@ -53,33 +134,16 @@ export default function Quiz() {
 
   async function startGrowing(finalAnswers: Answer[]) {
     setStep({ kind: 'growing' })
-    setGrowStage(0)
-    // Animate the seed → bloom while the story renders.
-    let s = 0
-    const timer = setInterval(() => {
-      s += 1
-      setGrowStage(Math.min(s, GROW_STAGES.length - 1))
-    }, 900)
-
     const result = scoreAnswers(finalAnswers)
     const arch = archetypes[result.winner]
-    const prod = buddy ? matchProduct(result.winner, buddy.theme) : matchProduct(result.winner)
+    const prod = buddy ? pickProduct(result.winner, buddy) : matchProduct(result.winner)
     const labels = finalAnswers.map((a) => {
       const q = questions.find((q) => q.id === a.questionId)
       return q?.choices.find((c) => c.id === a.choiceId)?.label ?? ''
     })
-
-    const st = await fetchStory({
-      buddy: buddy!,
-      archetype: arch,
-      product: prod,
-      choiceLabels: labels,
-    })
-
-    // Ensure the growing animation shows for a beat even if the API is instant.
+    const st = await fetchStory({ buddy: buddy!, archetype: arch, product: prod, choiceLabels: labels })
+    // Let the garden finish blooming before revealing.
     setTimeout(() => {
-      clearInterval(timer)
-      setGrowStage(GROW_STAGES.length - 1)
       setStory(st)
       setStep({ kind: 'reveal' })
     }, 2600)
@@ -91,126 +155,171 @@ export default function Quiz() {
       const q = questions.find((q) => q.id === a.questionId)
       return q?.choices.find((c) => c.id === a.choiceId)?.label ?? ''
     })
-    const st = await fetchStory({
-      buddy,
-      archetype,
-      product,
-      choiceLabels: labels,
-      childName: childName.trim(),
-    })
+    const st = await fetchStory({ buddy, archetype, product, choiceLabels: labels, childName: childName.trim() })
     setStory(st)
   }
 
-  const totalSteps = questions.length
-  const progress =
-    step.kind === 'question' ? step.index : step.kind === 'growing' || step.kind === 'reveal' ? totalSteps : -1
+  const showProgress = step.kind === 'question' || step.kind === 'growing' || step.kind === 'reveal'
 
   return (
     <div className="quiz">
+      {/* The continuous animated world sits behind everything. */}
+      <SceneStage
+        progress={progress}
+        buddy={step.kind === 'intro' || step.kind === 'mode' || step.kind === 'buddy' ? null : buddy}
+        outfit={step.kind === 'reveal' ? outfit : undefined}
+        chosen={chosen}
+        burst={burst}
+      />
+
       <div className="quiz__frame">
         <div className="quiz__top">
-          <button
-            className="quiz__back"
-            onClick={() => (step.kind === 'intro' ? navigate('/') : reset())}
-          >
-            ‹ {step.kind === 'intro' ? 'Home' : 'Restart'}
+          <button className="quiz__back" onClick={goBack}>
+            ‹ {step.kind === 'intro' ? 'Home' : 'Back'}
           </button>
-          {progress >= 0 && (
+          {showProgress && (
             <div className="quiz__progress">
               {questions.map((_, i) => (
                 <span key={i} className={'quiz__dot' + (i <= progress ? ' quiz__dot--on' : '')} />
               ))}
             </div>
           )}
+          <button
+            className="quiz__back"
+            onClick={reset}
+            style={{ visibility: step.kind === 'intro' || step.kind === 'mode' ? 'hidden' : 'visible' }}
+          >
+            Restart
+          </button>
         </div>
 
-        <div className="quiz__body">
+        <div
+          className={
+            'quiz__body ' +
+            (step.kind === 'question' || step.kind === 'growing'
+              ? 'quiz__body--top'
+              : step.kind === 'intro' || step.kind === 'mode'
+                ? 'quiz__body--center'
+                : 'quiz__body--scroll') // buddy picker + reveal scroll from the top (tall content)
+          }
+        >
           {step.kind === 'intro' && (
-            <>
-              <div className="pot">🪴</div>
+            <div className="panel">
               <h1 className="quiz__title">SPROUT</h1>
               <p className="quiz__tag">Plant a story · grow the perfect gift</p>
               <p className="quiz__scene">
-                A friend gave you a bag of mysterious seeds. “As we stay focused, the seed will grow
-                and reflect your true nature.” Shall we plant one?
+                A gentle wind is blowing over the hills of Apple Park. Pick a buddy and let’s go on a
+                little adventure together — no reading required.
               </p>
-              <div className="stack" style={{ marginTop: 26 }}>
-                <button className="btn btn--sprout btn--lg" onClick={() => setStep({ kind: 'buddy' })}>
-                  Start playing
+              <button className="btn btn--sprout btn--lg" onClick={() => setStep({ kind: 'mode' })}>
+                Start playing
+              </button>
+            </div>
+          )}
+
+          {step.kind === 'mode' && (
+            <div className="panel">
+              <h2 className="quiz__q">Pick your buddy…</h2>
+              <p className="quiz__scene">How would you like to choose?</p>
+              <div className="modes">
+                <button
+                  className="mode-card"
+                  onClick={() => {
+                    setPickMode('have')
+                    setStep({ kind: 'buddy' })
+                  }}
+                >
+                  <span className="mode-card__title">One I have</span>
+                  <span className="mode-card__sub">Play as a buddy you already own</span>
+                </button>
+                <button
+                  className="mode-card"
+                  onClick={() => {
+                    setPickMode('want')
+                    setStep({ kind: 'buddy' })
+                  }}
+                >
+                  <span className="mode-card__title">One I want</span>
+                  <span className="mode-card__sub">Try one you’d love to have</span>
+                </button>
+                <button className="mode-card mode-card--surprise" onClick={surpriseMe}>
+                  <span className="mode-card__title">Surprise me!</span>
+                  <span className="mode-card__sub">We’ll pick a buddy for you</span>
                 </button>
               </div>
-            </>
+            </div>
           )}
 
           {step.kind === 'buddy' && (
-            <>
-              <p className="quiz__scene">First, pick the buddy who will star in the story.</p>
-              <h2 className="quiz__q">Choose your Buddy</h2>
-              <div className="buddy__group">🧒 Apple Park Kids dolls</div>
+            <div className="panel panel--wide">
+              <h2 className="quiz__q">
+                {pickMode === 'have' ? 'Which buddy do you have?' : pickMode === 'want' ? 'Which buddy would you love?' : 'Choose your Buddy'}
+              </h2>
+              <p className="quiz__scene">They’ll be the hero of the story.</p>
+              <div className="buddy__group">Apple Park Kids dolls</div>
               <div className="buddies">
                 {dolls.map((b) => (
-                  <BuddyCard key={b.key} b={b} onPick={() => choose(b)} />
+                  <BuddyPick key={b.key} b={b} onPick={() => choose(b)} />
                 ))}
               </div>
-              <div className="buddy__group">🐾 Organic Farm Buddies</div>
+              <div className="buddy__group">Organic Farm Buddies</div>
               <div className="buddies">
                 {farmBuddies.map((b) => (
-                  <BuddyCard key={b.key} b={b} onPick={() => choose(b)} />
+                  <BuddyPick key={b.key} b={b} onPick={() => choose(b)} />
                 ))}
               </div>
-            </>
+            </div>
           )}
 
           {step.kind === 'question' && (
-            <>
-              <div className="pot" style={{ fontSize: 54 }}>
-                {buddy?.emoji}
-              </div>
+            <div className="panel panel--top panel--q">
               <p className="quiz__scene">{questions[step.index].scene}</p>
               <h2 className="quiz__q">{questions[step.index].prompt}</h2>
               <div className="choices">
                 {questions[step.index].choices.map((c) => (
-                  <button
+                  <ChoiceCard
                     key={c.id}
-                    className="choice"
-                    onClick={() => pickChoice(questions[step.index].id, c.id, step.index)}
-                  >
-                    <span className="choice__emoji">{c.emoji}</span>
-                    <span className="choice__label">{c.label}</span>
-                  </button>
+                    choice={c}
+                    onPick={() => pickChoice(questions[step.index].id, c.id, step.index)}
+                  />
                 ))}
               </div>
-            </>
+            </div>
           )}
 
           {step.kind === 'growing' && (
-            <div className="grow">
-              <div className="grow__stage" key={growStage}>
-                {GROW_STAGES[growStage]}
-              </div>
+            <div className="panel panel--top">
               <div className="spinner" />
-              <p className="grow__text">Your seed is growing into a story…</p>
+              <p className="quiz__scene">Your garden is blooming into a story…</p>
             </div>
           )}
 
           {step.kind === 'reveal' && buddy && (
-            <div className="reveal">
-              <div className="reveal__flower">{archetype.emoji}</div>
-              <div className="reveal__flowername">{archetype.flower}</div>
-              <h2 className="reveal__type">{archetype.title}</h2>
-              <p className="reveal__blurb">
-                {buddy.name} is {archetype.title.replace('The ', '').toLowerCase()}. {archetype.blurb}
-              </p>
+            <div className="panel reveal">
+              <div className="reveal__hero">
+                <BuddyCharacter buddy={buddy} size={156} outfit={outfit} />
+              </div>
+              <h2 className="reveal__type">
+                {buddy.name} is {archetype.title.replace('The ', 'a little ').toLowerCase()}!
+              </h2>
+              {isDoll && (
+                <p className="reveal__wearing">
+                  …and looks perfect in the <strong>{product.name}</strong>.
+                </p>
+              )}
 
+              {/* The story is the centerpiece — it stars this buddy + outfit. */}
               {story && (
-                <div className="story">
+                <div className="story story--lead">
                   <h3 className="story__title">{story.title}</h3>
                   <p className="story__body">{story.body}</p>
                 </div>
               )}
 
               <div className="match">
-                <span className="match__thumb">🎁</span>
+                <span className="match__thumb">
+                  <ChoiceIcon name="gift" size={52} />
+                </span>
                 <div className="match__info">
                   <div className="match__label">Their perfect gift</div>
                   <div className="match__name">{product.name}</div>
@@ -220,27 +329,51 @@ export default function Quiz() {
                 </div>
               </div>
 
+              {suggestions.length > 0 && (
+                <div className="suggest">
+                  <div className="suggest__label">2 you may also like</div>
+                  <div className="suggest__row">
+                    {suggestions.map((s) => (
+                      <a key={s.id} className="suggest__card" href={s.url} target="_blank" rel="noreferrer">
+                        <span className="suggest__thumb">
+                          <BuddyCharacter buddy={buddy} size={66} outfit={{ color: outfitColor(s, ARCH_COLOR[winner]) }} />
+                        </span>
+                        <span className="suggest__name">{s.name}</span>
+                        <span className="suggest__price">
+                          <PriceTag product={s} />
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="stack">
                 {added ? (
-                  <span className="toast">✓ Added to cart</span>
+                  <span className="toast">
+                    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden style={{ marginRight: 6, verticalAlign: '-2px' }}>
+                      <path d="M5 13 l4 4 L19 7" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Added to cart
+                  </span>
                 ) : (
                   <button className="btn btn--sprout btn--lg" onClick={() => setAdded(true)}>
                     Add to cart · {money(price(product).now)}
                   </button>
                 )}
-
-                <div className="keepsake" style={{ marginTop: 10 }}>
-                  <p className="grow__text">Make it a keepsake — add your child’s name:</p>
+                <div className="keepsake">
+                  <p className="quiz__scene" style={{ margin: '4px 0' }}>
+                    Make it a keepsake — add your child’s name:
+                  </p>
                   <input
                     placeholder="Child’s first name"
                     value={childName}
                     onChange={(e) => setChildName(e.target.value)}
                   />
                   <button className="btn btn--ghost" onClick={personalize} disabled={!childName.trim()}>
-                    ✨ Personalize the story
+                    Personalize the story
                   </button>
                 </div>
-
                 <button className="linkish" onClick={reset}>
                   Play again
                 </button>
@@ -251,17 +384,14 @@ export default function Quiz() {
       </div>
     </div>
   )
-
-  function choose(b: Buddy) {
-    setBuddy(b)
-    setStep({ kind: 'question', index: 0 })
-  }
 }
 
-function BuddyCard({ b, onPick }: { b: Buddy; onPick: () => void }) {
+function BuddyPick({ b, onPick }: { b: Buddy; onPick: () => void }) {
   return (
     <button className="buddy" onClick={onPick}>
-      <span className="buddy__emoji">{b.emoji}</span>
+      <span className="buddy__avatar">
+        <BuddyCharacter buddy={b} size={56} />
+      </span>
       <span className="buddy__name">{b.name}</span>
       <span className="buddy__kind">{b.kind === 'doll' ? 'Doll' : b.theme}</span>
     </button>

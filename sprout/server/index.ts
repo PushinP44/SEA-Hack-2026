@@ -29,11 +29,24 @@ function template(b: StoryReq): { title: string; body: string } {
   return {
     title: `${b.buddy} and the ${b.flower}`,
     body:
-      `Once upon a quiet morning in Apple Park, ${hero} planted a tiny seed and waited. ` +
-      `Day by day it grew into a bright ${b.flower.toLowerCase()}. ${b.buddy} is a true ${b.archetype.replace(/^The /, '')}, ` +
-      `and when the flower bloomed it revealed the perfect companion for the journey ahead: ` +
-      `the ${b.product}. The end… or really, just the beginning.`,
+      `One breezy morning in Apple Park, ${hero} set off on a little adventure. ` +
+      `${adventureFrom(b.choices)} ` +
+      `What a day for a true ${b.archetype.replace(/^The /, '')}! ` +
+      `And waiting at home was the perfect outfit — the ${b.product} — comfy and soft, ` +
+      `just right for a child who loves ${loveFrom(b.choices)}. ${b.buddy} put it on, twirled once, and beamed. ` +
+      `The end… or really, just the beginning.`,
   }
+}
+
+// Turn the child's picked choices into the story's beats + a "loves …" phrase.
+function adventureFrom(choices: string[]): string {
+  const beats = choices.slice(0, 4).map((c) => c.toLowerCase())
+  if (!beats.length) return `They played all day long.`
+  return `They chose to ${beats.join(', then ')}.`
+}
+function loveFrom(choices: string[]): string {
+  const beats = choices.slice(0, 2).map((c) => c.toLowerCase())
+  return beats.length ? beats.join(' and ') : 'play'
 }
 
 app.post('/api/story', async (req, res) => {
@@ -59,9 +72,12 @@ app.post('/api/story', async (req, res) => {
           content:
             `Write a tiny bedtime story that celebrates a child's personality result.\n` +
             `${nameLine}\n` +
-            `Personality archetype: ${body.archetype}. Its flower is the ${body.flower}.\n` +
-            `The child made these playful choices in the quiz: ${body.choices.join(', ')}.\n` +
-            `End by revealing that the perfect matching gift is the "${body.product}" — mention it by name naturally.\n` +
+            `Personality archetype: ${body.archetype}.\n` +
+            `IMPORTANT — build the little adventure directly out of the choices the child made, in order: ` +
+            `${body.choices.join('; ')}. Each choice should actually happen in the story (e.g. they run down the hill, they meet the bunny…), so the story clearly reflects what they picked.\n` +
+            `Then end by revealing the perfect outfit — the "${body.product}" — and, in one warm closing sentence, ` +
+            `say WHY it suits a child who loves doing those very things (tie the outfit back to their chosen actions, ` +
+            `e.g. comfy to run and play in, soft for cozy days). Name the outfit naturally.\n` +
             `Respond with only the JSON object.`,
         },
       ],
