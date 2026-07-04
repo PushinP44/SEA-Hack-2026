@@ -10,8 +10,9 @@ import type { ArchetypeId } from './archetypes'
 export type Choice = {
   id: string
   label: string
-  icon: string // key into components/quiz/ChoiceIcon
+  icon: string // key into components/quiz/ChoiceIcon (also drives sound/effect)
   scores: ArchetypeId
+  buddyKey?: string // if set, the card shows this Farm Buddy (into buddies.ts)
 }
 
 export type Question = {
@@ -46,16 +47,16 @@ export const questions: Question[] = [
     prompt: 'Where do you go next?',
     choices: [
       { id: 'a', label: 'Off to the wild mountains', icon: 'mountains', scores: 'adventurer' },
-      { id: 'b', label: 'Into the busy workshop', icon: 'workshop', scores: 'maker' },
+      { id: 'b', label: 'Blow some bubbles', icon: 'bubbles', scores: 'maker' },
     ],
   },
   {
     id: 4,
-    scene: 'A little friend hops over to say hello.',
-    prompt: 'Who do you hope it is?',
+    scene: 'A little Farm Buddy wants to join your adventure!',
+    prompt: 'Who comes along?',
     choices: [
-      { id: 'a', label: 'A soft, shy bunny', icon: 'bunny', scores: 'dreamer' },
-      { id: 'b', label: 'A cuddly sleepy bear', icon: 'bear', scores: 'nurturer' },
+      { id: 'a', label: 'Cupcake the Unicorn', icon: 'bunny', buddyKey: 'cupcake the unicorn', scores: 'dreamer' },
+      { id: 'b', label: 'Kozy Koala', icon: 'bear', buddyKey: 'kozy koala', scores: 'nurturer' },
     ],
   },
   {

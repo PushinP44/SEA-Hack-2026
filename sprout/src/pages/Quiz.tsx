@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { questions } from '../data/questions'
-import { dolls, farmBuddies, allBuddies, type Buddy } from '../data/buddies'
+import { dolls, farmBuddies, allBuddies, findBuddy, type Buddy } from '../data/buddies'
 import { scoreAnswers, type Answer } from '../lib/scoring'
 import { archetypes, type ArchetypeId } from '../data/archetypes'
 import { matchProduct, matchOutfit, moreSuggestions, outfitColor, price } from '../lib/match'
@@ -12,6 +12,8 @@ import SceneStage from '../components/quiz/SceneStage'
 import BuddyCharacter, { type Outfit } from '../components/quiz/BuddyCharacter'
 import ChoiceCard from '../components/quiz/ChoiceCard'
 import ChoiceIcon from '../components/quiz/ChoiceIcon'
+import { heldToys, companions, effectKind } from '../data/effects'
+import { initAudio, setMuted, setAmbient, clearAmbient } from '../lib/sfx'
 
 type Step =
   | { kind: 'intro' }
@@ -45,6 +47,13 @@ export default function Quiz() {
   const [childName, setChildName] = useState('')
   const [added, setAdded] = useState(false)
   const [pickMode, setPickMode] = useState<PickMode>(null)
+  const [muted, setMutedState] = useState(false)
+  function toggleMute() {
+    setMutedState((m) => {
+      setMuted(!m)
+      return !m
+    })
+  }
   // Click impact: the icon of the last-picked choice + a nonce so the scene
   // re-fires a burst even if the same icon is picked twice.
   const [burst, setBurst] = useState<{ icon: string; n: number } | undefined>()
@@ -67,6 +76,9 @@ export default function Quiz() {
     buddy && isDoll ? { color: outfitColor(product, ARCH_COLOR[winner]), label: product.name } : undefined
   // Two extra picks for the reveal's "2 you may like" row.
   const suggestions = buddy ? moreSuggestions(winner, [product.id]) : []
+  // Everything the child collected — shown on the doll at the reveal.
+  const collectedToys = buddy ? heldToys(chosen) : []
+  const collectedPals = buddy ? companions(chosen) : []
 
   // The scene's progress (0..MAX) is derived from the current step, so the
   // world stays in lockstep with the questions and rewinds on Back.
@@ -86,6 +98,7 @@ export default function Quiz() {
     setAdded(false)
     setBurst(undefined)
     setPickMode(null)
+    clearAmbient()
   }
 
   function choose(b: Buddy) {
@@ -122,9 +135,14 @@ export default function Quiz() {
   function pickChoice(questionId: number, choiceId: string, index: number) {
     const next = [...answers.filter((a) => a.questionId !== questionId), { questionId, choiceId }]
     setAnswers(next)
-    // Fire a themed burst in the scene for the tapped choice.
+    // Fire a themed burst in the scene for the tapped choice, and keep its sound
+    // looping softly in the background (one ambient per type; new pick replaces).
     const icon = questions[index].choices.find((c) => c.id === choiceId)?.icon
-    if (icon) setBurst({ icon, n: ++burstN.current })
+    if (icon) {
+      setBurst({ icon, n: ++burstN.current })
+      const k = effectKind(icon)
+      if (k) setAmbient(k, icon)
+    }
     if (index + 1 < questions.length) {
       setStep({ kind: 'question', index: index + 1 })
     } else {
@@ -184,13 +202,28 @@ export default function Quiz() {
               ))}
             </div>
           )}
-          <button
-            className="quiz__back"
-            onClick={reset}
-            style={{ visibility: step.kind === 'intro' || step.kind === 'mode' ? 'hidden' : 'visible' }}
-          >
-            Restart
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="quiz__back quiz__mute" onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'}>
+              {muted ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+                  <path d="M4 9 h4 l5 -4 v14 l-5 -4 H4 Z" fill="currentColor" />
+                  <path d="M16 9 l5 6 M21 9 l-5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+                  <path d="M4 9 h4 l5 -4 v14 l-5 -4 H4 Z" fill="currentColor" />
+                  <path d="M16 8 q3 4 0 8 M18.5 6 q5 6 0 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              )}
+            </button>
+            <button
+              className="quiz__back"
+              onClick={reset}
+              style={{ visibility: step.kind === 'intro' || step.kind === 'mode' ? 'hidden' : 'visible' }}
+            >
+              Restart
+            </button>
+          </div>
         </div>
 
         <div
@@ -211,7 +244,13 @@ export default function Quiz() {
                 A gentle wind is blowing over the hills of Apple Park. Pick a buddy and let’s go on a
                 little adventure together — no reading required.
               </p>
-              <button className="btn btn--sprout btn--lg" onClick={() => setStep({ kind: 'mode' })}>
+              <button
+                className="btn btn--sprout btn--lg"
+                onClick={() => {
+                  initAudio() // unlock audio on the first gesture
+                  setStep({ kind: 'mode' })
+                }}
+              >
                 Start playing
               </button>
             </div>
@@ -297,8 +336,21 @@ export default function Quiz() {
           {step.kind === 'reveal' && buddy && (
             <div className="panel reveal">
               <div className="reveal__hero">
-                <BuddyCharacter buddy={buddy} size={156} outfit={outfit} />
+                {collectedPals.slice(0, 1).map((key, k) => {
+                  const pb = findBuddy(key)
+                  return pb ? (
+                    <span key={k} className="reveal__pal">
+                      <BuddyCharacter buddy={pb} size={78} />
+                    </span>
+                  ) : null
+                })}
+                <BuddyCharacter buddy={buddy} size={156} outfit={outfit} held={collectedToys} />
               </div>
+              {(collectedToys.length > 0 || collectedPals.length > 0) && (
+                <p className="reveal__collected">
+                  …with everything {buddy.name} gathered along the way.
+                </p>
+              )}
               <h2 className="reveal__type">
                 {buddy.name} is {archetype.title.replace('The ', 'a little ').toLowerCase()}!
               </h2>

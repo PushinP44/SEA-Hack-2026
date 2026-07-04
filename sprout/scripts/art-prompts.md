@@ -82,3 +82,27 @@ hand-painted shading, no text.
 > Optional motion upgrade: replace the code scene with a **Lottie** (`public/anim/growth.json`)
 > or **Rive** (`public/anim/garden.riv`) file and drive it with the same `progress` value —
 > `SceneStage` already centralizes progress, so only that component changes.
+
+---
+
+# v11 — Oil-pastel cozy night-meadow (drop-in slots)
+
+The scene is coded (SVG + paper-grain filter). To replace it with real oil-pastel art, generate PNGs
+with the prompt below and drop them in `/public/art`; wire them by swapping the coded layers in
+`SceneStage.tsx` (or register in `art.ts`).
+
+**Master style prompt** (per your brief): "An authentic, highly detailed hand-drawn oil-pastel
+illustration, thick visible textured wax strokes, soft crayon-smudged blending on heavily textured
+cream artisan paper. Gentle, organic, imperfect, like a cherished children's book. A cozy gentle night
+in a quiet organic meadow framed by soft cloud-like trees and a calm winding stream, under a large warm
+crescent moon with a sleepy comforting smile and a swirling sky of soft rounded colorful stars. Rounded
+forms, no sharp edges; relaxed sleepy happy expressions; tactile texture; soft comforting moon/starlight;
+muted earth tones — warm apricots, gentle blues, mossy greens, muted yellows, soft browns. No high
+saturation, no alarming contrast."
+
+Layer slots (transparent PNGs unless noted):
+- `scene-bg-night.png` (full, opaque) — sky + moon + stars + distant hills.
+- `scene-moon.png`, `scene-tree.png`, `scene-stream.png`, `scene-mountains.png`, `scene-cottage.png`.
+- `buddy-<key>.png` — doll/animal cutouts (already supported by `BuddyCharacter`).
+- `companion-bunny.png`, `companion-bear.png` — the walk-alongside friends.
+- `toy-<icon>.png` — held toys (flute, drum, compass, crown, teddy, wrench).
