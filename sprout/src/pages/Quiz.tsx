@@ -10,10 +10,11 @@ import { fetchStory, type Story } from '../lib/story'
 import { MAX_PROGRESS } from '../data/scenes'
 import SceneStage from '../components/quiz/SceneStage'
 import BuddyCharacter, { type Outfit } from '../components/quiz/BuddyCharacter'
-import ChoiceCard from '../components/quiz/ChoiceCard'
 import ChoiceIcon from '../components/quiz/ChoiceIcon'
 import { heldToys, companions, effectKind } from '../data/effects'
-import { initAudio, setMuted, setAmbient, clearAmbient } from '../lib/sfx'
+import { initAudio, setMuted, setAmbient, clearAmbient, playHover, stopHover } from '../lib/sfx'
+import { buildSeedancePrompt } from '../lib/storyPrompt'
+import type { Choice } from '../data/questions'
 
 type Step =
   | { kind: 'intro' }
@@ -36,6 +37,12 @@ const ARCH_COLOR: Record<ArchetypeId, string> = {
 // Dolls → a wearable outfit; animals → a themed companion product.
 function pickProduct(winnerId: ArchetypeId, b: Buddy): Product {
   return b.kind === 'doll' ? matchOutfit(winnerId) : matchProduct(winnerId, b.theme)
+}
+
+// A choice's picture: a real Farm Buddy if it names one, else its illustrated icon.
+function choiceArt(choice: Choice, size: number) {
+  const b = choice.buddyKey ? findBuddy(choice.buddyKey) : undefined
+  return b ? <BuddyCharacter buddy={b} size={size} /> : <ChoiceIcon name={choice.icon} size={size} />
 }
 
 export default function Quiz() {
@@ -159,6 +166,22 @@ export default function Quiz() {
       const q = questions.find((q) => q.id === a.questionId)
       return q?.choices.find((c) => c.id === a.choiceId)?.label ?? ''
     })
+    // Log a full Seedance video-prompt storyboard of the whole journey, so a
+    // non-interactive fairytale video could be generated from this exact play.
+    console.log(
+      '%cKraDoll → Seedance storyboard prompt (copy everything below)',
+      'font-weight:bold;color:#7a5cff;font-size:13px',
+    )
+    console.log(
+      buildSeedancePrompt({
+        buddy: buddy!,
+        answers: finalAnswers,
+        winner: result.winner,
+        product: prod,
+        outfitColor: buddy?.kind === 'doll' ? outfitColor(prod, ARCH_COLOR[result.winner]) : undefined,
+      }),
+    )
+
     const st = await fetchStory({ buddy: buddy!, archetype: arch, product: prod, choiceLabels: labels })
     // Let the garden finish blooming before revealing.
     setTimeout(() => {
@@ -238,14 +261,14 @@ export default function Quiz() {
         >
           {step.kind === 'intro' && (
             <div className="panel">
-              <h1 className="quiz__title">SPROUT</h1>
+              <h1 className="quiz__title">KraDoll</h1>
               <p className="quiz__tag">Plant a story · grow the perfect gift</p>
               <p className="quiz__scene">
                 A gentle wind is blowing over the hills of Apple Park. Pick a buddy and let’s go on a
                 little adventure together — no reading required.
               </p>
               <button
-                className="btn btn--sprout btn--lg"
+                className="btn btn--kradoll btn--lg"
                 onClick={() => {
                   initAudio() // unlock audio on the first gesture
                   setStep({ kind: 'mode' })
@@ -311,18 +334,30 @@ export default function Quiz() {
           )}
 
           {step.kind === 'question' && (
-            <div className="panel panel--top panel--q">
-              <p className="quiz__scene">{questions[step.index].scene}</p>
-              <h2 className="quiz__q">{questions[step.index].prompt}</h2>
-              <div className="choices">
-                {questions[step.index].choices.map((c) => (
-                  <ChoiceCard
-                    key={c.id}
-                    choice={c}
-                    onPick={() => pickChoice(questions[step.index].id, c.id, step.index)}
-                  />
-                ))}
+            /* one thought bubble above the head: the question + the two big
+               choices live together, so it reads as "let's decide together" */
+            <div className="thinkbubble" key={step.index}>
+              <div className="thinkbubble__cloud">
+                <p className="tbubble__q">
+                  {questions[step.index].ask.replace('{name}', buddy?.name ?? 'friend')}
+                </p>
+                <div className="tbubble__choices">
+                  {questions[step.index].choices.map((c) => (
+                    <button
+                      key={c.id}
+                      className="tchoice"
+                      onClick={() => pickChoice(questions[step.index].id, c.id, step.index)}
+                      onPointerEnter={() => playHover(c.icon)}
+                      onPointerLeave={stopHover}
+                    >
+                      <span className="tchoice__art">{choiceArt(c, 120)}</span>
+                      <span className="tchoice__label">{c.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
+              <i className="thinkbubble__b1" />
+              <i className="thinkbubble__b2" />
             </div>
           )}
 
@@ -340,11 +375,11 @@ export default function Quiz() {
                   const pb = findBuddy(key)
                   return pb ? (
                     <span key={k} className="reveal__pal">
-                      <BuddyCharacter buddy={pb} size={78} />
+                      <BuddyCharacter buddy={pb} size={78} emotion="love" />
                     </span>
                   ) : null
                 })}
-                <BuddyCharacter buddy={buddy} size={156} outfit={outfit} held={collectedToys} />
+                <BuddyCharacter buddy={buddy} size={156} outfit={outfit} held={collectedToys} emotion="excited" />
               </div>
               {(collectedToys.length > 0 || collectedPals.length > 0) && (
                 <p className="reveal__collected">
@@ -409,7 +444,7 @@ export default function Quiz() {
                     Added to cart
                   </span>
                 ) : (
-                  <button className="btn btn--sprout btn--lg" onClick={() => setAdded(true)}>
+                  <button className="btn btn--kradoll btn--lg" onClick={() => setAdded(true)}>
                     Add to cart · {money(price(product).now)}
                   </button>
                 )}

@@ -45,15 +45,15 @@ export default function Home() {
               <a className="btn btn--primary btn--lg" href="#catalog">
                 Shop the collection
               </a>
-              <Link className="btn btn--sprout btn--lg" to="/quiz">
-                🌱 Try the SPROUT gift quiz
+              <Link className="btn btn--kradoll btn--lg" to="/quiz">
+                Try the KraDoll gift quiz
               </Link>
             </div>
           </div>
           <div className="hero__art">
             <div className="bigmoji">🌱</div>
             <div style={{ fontFamily: 'var(--serif)', fontSize: 22, marginTop: 8 }}>
-              Meet SPROUT
+              Meet KraDoll
             </div>
             <p style={{ color: 'var(--muted)', fontSize: 14 }}>
               The child plays a tiny story. You get one perfect gift, in one tap.
@@ -81,17 +81,17 @@ export default function Home() {
         <CollectionGrid items={apparelFallback()} />
       </section>
 
-      {/* SPROUT banner */}
+      {/* KraDoll banner */}
       <section className="section container">
         <div className="philo" style={{ background: 'linear-gradient(160deg,#f4ede2,#f6e2d9)' }}>
           <div className="bigmoji" style={{ fontSize: 52 }}>🌸</div>
           <h3>Don’t guess. Let them play.</h3>
           <p>
-            SPROUT turns gift-shopping into a five-minute picture story starring a doll or Farm Buddy
+            KraDoll turns gift-shopping into a five-minute picture story starring a doll or Farm Buddy
             your child already loves. They answer — you receive a finished decision, priced and ready.
           </p>
           <div style={{ marginTop: 18 }}>
-            <Link className="btn btn--sprout btn--lg" to="/quiz">
+            <Link className="btn btn--kradoll btn--lg" to="/quiz">
               🌱 Start the quiz
             </Link>
           </div>

@@ -66,12 +66,12 @@ button { font-family: inherit; cursor: pointer; }
 .nav__links { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; align-items: center; }
 .nav__link { font-size: 14px; color: var(--ink); padding: 6px 2px; border-bottom: 2px solid transparent; }
 .nav__link:hover { border-color: var(--sage); }
-.nav__sprout {
+.nav__kradoll {
   background: linear-gradient(120deg, var(--terra), var(--rose-deep));
   color: #fff; padding: 8px 16px; border-radius: 999px; font-weight: 800;
   display: inline-flex; align-items: center; gap: 6px; box-shadow: var(--shadow);
 }
-.nav__sprout:hover { filter: brightness(1.05); border: none; }
+.nav__kradoll:hover { filter: brightness(1.05); border: none; }
 
 /* ---------- Layout ---------- */
 .container { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
@@ -103,7 +103,7 @@ button { font-family: inherit; cursor: pointer; }
 .btn { border: none; border-radius: 999px; padding: 13px 26px; font-weight: 800; font-size: 15px; }
 .btn--primary { background: var(--sage-deep); color: #fff; box-shadow: var(--shadow); }
 .btn--primary:hover { background: #5f8a63; }
-.btn--sprout { background: linear-gradient(120deg, var(--terra), var(--rose-deep)); color: #fff; box-shadow: var(--shadow); }
+.btn--kradoll { background: linear-gradient(120deg, var(--terra), var(--rose-deep)); color: #fff; box-shadow: var(--shadow); }
 .btn--ghost { background: #fff; border: 1px solid var(--line); color: var(--ink); }
 .btn--lg { padding: 16px 34px; font-size: 17px; }
 
@@ -871,3 +871,190 @@ button { font-family: inherit; cursor: pointer; }
 /* companions keep pace with the same easy cadence */
 .scene__pals .pal { animation: palWalk 0.62s ease-in-out infinite; }
 @keyframes palWalk { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+/* ================= v17: symbolic, less-text question (think bubble + big pictures) ================= */
+.quiz__body { position: relative; }
+
+/* the character's thought bubble above its head — shows the two options, no words */
+.thinkbubble { position: absolute; left: 50%; top: 34%; transform: translateX(-50%); z-index: 3; animation: bubblePop 0.45s cubic-bezier(.2,1.4,.4,1); }
+.thinkbubble__cloud {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.96); border: 2.5px solid var(--line); border-radius: 46px;
+  padding: 12px 20px; box-shadow: var(--shadow); animation: bubbleFloat 3s ease-in-out infinite;
+}
+.thinkbubble__opt { display: flex; align-items: center; }
+.thinkbubble__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--rose-deep); opacity: 0.55; }
+.thinkbubble__b1, .thinkbubble__b2 { position: absolute; background: rgba(255,255,255,0.96); border: 2.5px solid var(--line); border-radius: 50%; }
+.thinkbubble__b1 { width: 16px; height: 16px; left: 42px; bottom: -16px; }
+.thinkbubble__b2 { width: 9px; height: 9px; left: 32px; bottom: -30px; }
+@keyframes bubblePop { from { transform: translateX(-50%) scale(0.5); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+@keyframes bubbleFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+/* two BIG picture buttons — a 5-year-old taps the one they like */
+.bigchoices { position: absolute; left: 0; right: 0; bottom: 22px; display: flex; gap: 16px; justify-content: center; padding: 0 18px; z-index: 3; }
+.bigchoice {
+  flex: 1 1 0; max-width: 190px;
+  background: rgba(255,255,255,0.9); border: 2.5px solid rgba(255,255,255,0.96); border-radius: 30px;
+  padding: 16px 10px; box-shadow: var(--shadow); backdrop-filter: blur(4px);
+  transition: transform 0.12s, box-shadow 0.12s; animation: choicePulse 2.4s ease-in-out infinite;
+}
+.bigchoice:nth-child(2) { animation-delay: 1.2s; }
+.bigchoice:hover, .bigchoice:active { transform: translateY(-5px) scale(1.05); box-shadow: 0 16px 36px rgba(90,78,60,0.18); animation: none; }
+.bigchoice__art { display: flex; align-items: center; justify-content: center; }
+/* a gentle "tap me" pulse so kids know they're buttons */
+@keyframes choicePulse { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* ================= v17b: per-choice complements ================= */
+/* windy → leaves blow across (up-right to down-left, matching the walk) */
+.scene__leaves .leaf { transform-box: fill-box; transform-origin: center; opacity: 0; animation: leafDrift 6s linear infinite; }
+.leaf--0 { --sx: 780px; animation-delay: 0s; } .leaf--1 { --sx: 640px; animation-delay: 1s; }
+.leaf--2 { --sx: 520px; animation-delay: 2s; } .leaf--3 { --sx: 700px; animation-delay: 3s; }
+.leaf--4 { --sx: 580px; animation-delay: 1.6s; } .leaf--5 { --sx: 460px; animation-delay: 4s; }
+@keyframes leafDrift {
+  0% { opacity: 0; transform: translate(var(--sx,700px), 60px) rotate(0deg); }
+  12% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(calc(var(--sx,700px) - 820px), 430px) rotate(420deg); }
+}
+
+/* mountains → a little bird soars across the sky */
+.scene__bird { transform-box: fill-box; animation: birdFly 13s linear infinite; }
+@keyframes birdFly { 0% { transform: translate(840px, 130px); } 100% { transform: translate(-60px, 96px); } }
+
+/* crown → a soft sparkle shower around the doll */
+.csparkle { transform-box: fill-box; transform-origin: center; opacity: 0; animation: csFall 1.7s ease-in infinite; }
+.csparkle--0 { --cx: -46px; animation-delay: 0s; } .csparkle--1 { --cx: -20px; animation-delay: 0.3s; }
+.csparkle--2 { --cx: 6px; animation-delay: 0.6s; } .csparkle--3 { --cx: 30px; animation-delay: 0.9s; }
+.csparkle--4 { --cx: 52px; animation-delay: 1.2s; } .csparkle--5 { --cx: -8px; animation-delay: 1.5s; }
+@keyframes csFall {
+  0% { opacity: 0; transform: translate(var(--cx,0), -14px) scale(0.3) rotate(0deg); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--cx,0), 40px) scale(1) rotate(90deg); }
+}
+
+/* ================= v18: choices live INSIDE the thought bubble (big + short text) ================= */
+.thinkbubble { top: 7%; }
+.thinkbubble__cloud {
+  display: flex; align-items: stretch; gap: 14px;
+  padding: 16px; border-radius: 36px;
+}
+/* each option is a big tappable card with a short, readable label */
+.tchoice {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.7); border: 2px solid var(--line); border-radius: 24px;
+  padding: 12px 12px 14px; max-width: 178px; transition: transform 0.12s, background 0.12s, box-shadow 0.12s;
+}
+.tchoice:hover, .tchoice:active { transform: translateY(-4px) scale(1.04); background: #fff; box-shadow: var(--shadow); }
+.tchoice__art { display: flex; align-items: center; justify-content: center; }
+.tchoice__label { font-size: 15px; font-weight: 700; color: #4a4640; line-height: 1.25; text-align: center; max-width: 15ch; }
+
+/* tails point down toward the character */
+.thinkbubble__b1 { left: calc(50% - 8px); bottom: -16px; }
+.thinkbubble__b2 { left: calc(50% - 20px); bottom: -30px; }
+
+/* crown action: the buddy stops walking and sits to put the crown on */
+.scene.sitting .scroll-far, .scene.sitting .scroll-mid, .scene.sitting .scroll-fore { animation-play-state: paused; }
+.scene__hero.sitting .scene__hero-sway { animation-play-state: paused; }
+.scene__hero.sitting .scene__hero-bob { animation: sitDown 2s ease; }
+@keyframes sitDown {
+  0% { transform: translateY(0) scaleY(1); }
+  22% { transform: translateY(12px) scaleY(0.84); }
+  78% { transform: translateY(12px) scaleY(0.84); }
+  100% { transform: translateY(0) scaleY(1); }
+}
+
+/* ================= v19: name-question caption, bubble-above-head, fairytale art ================= */
+
+/* the short, name-based question a kid reads aloud ("What will Poppy do?") */
+.qask {
+  position: relative; z-index: 3; align-self: center;
+  margin: 0; font-family: var(--serif); font-weight: 700;
+  font-size: 23px; line-height: 1.25; color: #4a4640;
+  background: rgba(255,255,255,0.78); backdrop-filter: blur(5px);
+  border: 1.5px solid rgba(255,255,255,0.9);
+  border-radius: 999px; padding: 9px 22px; box-shadow: var(--shadow);
+  animation: bubblePop 0.4s cubic-bezier(.2,1.4,.4,1);
+}
+
+/* thought bubble now sits EXACTLY above the character's head */
+.thinkbubble {
+  top: 62%; bottom: auto;
+  transform: translate(-50%, calc(-100% - 4px));
+  animation: bubbleRise 0.45s cubic-bezier(.2,1.4,.4,1);
+}
+@keyframes bubbleRise {
+  from { transform: translate(-50%, calc(-100% - 4px)) scale(0.5); opacity: 0; }
+  to   { transform: translate(-50%, calc(-100% - 4px)) scale(1); opacity: 1; }
+}
+
+/* fireflies drift and glow over the meadow */
+.firefly { transform-box: fill-box; transform-origin: center;
+  animation: fireflyGlow 3s ease-in-out infinite, fireflyDrift 8s ease-in-out infinite; }
+.firefly--1 { animation-duration: 3.6s, 9.5s; }
+.firefly--2 { animation-duration: 2.6s, 7s; }
+.firefly--3 { animation-duration: 3.2s, 10.5s; }
+.firefly--4 { animation-duration: 4s, 8.5s; }
+@keyframes fireflyGlow { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+@keyframes fireflyDrift {
+  0%   { transform: translate(0,0); }
+  25%  { transform: translate(10px,-12px); }
+  50%  { transform: translate(-6px,-22px); }
+  75%  { transform: translate(-14px,-8px); }
+  100% { transform: translate(0,0); }
+}
+
+/* little tree blossoms twinkle */
+.blossom { animation: blossomTwinkle 3.4s ease-in-out infinite; }
+@keyframes blossomTwinkle { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+/* crisp four-point sparkle stars shimmer a touch faster */
+.star--spark { animation-duration: 2.4s !important; }
+
+/* a rare wishing star streaks across the sky */
+.scene__shootingstar .shooter { transform-box: fill-box; opacity: 0; animation: shoot 8s ease-in infinite; }
+@keyframes shoot {
+  0%   { opacity: 0; transform: translate(770px, 48px); }
+  86%  { opacity: 0; transform: translate(770px, 48px); }
+  90%  { opacity: 1; transform: translate(600px, 92px); }
+  100% { opacity: 0; transform: translate(320px, 182px); }
+}
+
+/* a soft magical aura glows behind the character */
+.scene__hero::before {
+  content: ''; position: absolute; left: 50%; top: 42%;
+  width: 150px; height: 150px; transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(250,240,200,0.34), rgba(250,240,200,0.10) 45%, transparent 68%);
+  z-index: -1; pointer-events: none;
+  animation: auraPulse 4.2s ease-in-out infinite;
+}
+@keyframes auraPulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+/* ================= v20: question + choices share one bubble; character emotion ================= */
+
+/* the thought bubble now stacks the question over the two big choices */
+.thinkbubble__cloud { flex-direction: column; align-items: center; gap: 10px; padding: 12px 16px 15px; }
+.tbubble__q {
+  margin: 2px 6px 0; font-family: var(--serif); font-weight: 700;
+  font-size: 19px; line-height: 1.2; color: #4a4640;
+}
+.tbubble__choices { display: flex; align-items: stretch; gap: 14px; }
+
+/* eyes blink together every few seconds */
+.face-eyes { transform-box: fill-box; transform-origin: center; animation: blink 5.5s ease-in-out infinite; }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.12); } }
+
+/* excited: little sparkles pop above the head */
+.emocue { pointer-events: none; }
+.emospark { transform-box: fill-box; transform-origin: center; animation: emoPop 1.1s ease-in-out infinite; }
+.emospark--b { animation-delay: 0.45s; }
+@keyframes emoPop { 0%,100% { transform: scale(0.4); opacity: 0.2; } 50% { transform: scale(1.1); opacity: 1; } }
+
+/* love: a soft heart drifts up over the head */
+.emoheart { transform-box: fill-box; transform-origin: center; animation: heartFloat 2.6s ease-in-out infinite; }
+@keyframes heartFloat {
+  0%,100% { transform: translateY(0) scale(0.9); opacity: 0.65; }
+  50%     { transform: translateY(-4px) scale(1.08); opacity: 1; }
+}
+
+/* stagger blinks so hero + companion don't blink in perfect sync */
+.scene__pals .face-eyes { animation-delay: 2.3s; }
+.reveal__pal .face-eyes { animation-delay: 1.6s; }

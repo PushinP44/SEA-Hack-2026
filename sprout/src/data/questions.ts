@@ -19,6 +19,7 @@ export type Question = {
   id: number
   scene: string
   prompt: string
+  ask: string // short, name-based question a kid can read aloud ({name} = the buddy)
   choices: Choice[]
 }
 
@@ -27,6 +28,7 @@ export const questions: Question[] = [
     id: 1,
     scene: 'You and your buddy reach the top of a breezy hill. The wind swirls all around!',
     prompt: 'What do you do?',
+    ask: 'What shall we do, {name}?',
     choices: [
       { id: 'a', label: 'Run down into the wind', icon: 'run', scores: 'adventurer' },
       { id: 'b', label: 'Curl up and watch the clouds', icon: 'cloud', scores: 'nurturer' },
@@ -36,6 +38,7 @@ export const questions: Question[] = [
     id: 2,
     scene: 'Strolling down the path, you start to hum a little tune…',
     prompt: 'Which sound feels right?',
+    ask: 'What shall we hear, {name}?',
     choices: [
       { id: 'a', label: 'A dreamy flute', icon: 'flute', scores: 'dreamer' },
       { id: 'b', label: 'A bouncy drum', icon: 'drum', scores: 'maker' },
@@ -45,6 +48,7 @@ export const questions: Question[] = [
     id: 3,
     scene: 'You reach a lookout high above the valley.',
     prompt: 'Where do you go next?',
+    ask: 'Where shall we go together, {name}?',
     choices: [
       { id: 'a', label: 'Off to the wild mountains', icon: 'mountains', scores: 'adventurer' },
       { id: 'b', label: 'Blow some bubbles', icon: 'bubbles', scores: 'maker' },
@@ -54,6 +58,7 @@ export const questions: Question[] = [
     id: 4,
     scene: 'A little Farm Buddy wants to join your adventure!',
     prompt: 'Who comes along?',
+    ask: 'Who shall join us, {name}?',
     choices: [
       { id: 'a', label: 'Cupcake the Unicorn', icon: 'bunny', buddyKey: 'cupcake the unicorn', scores: 'dreamer' },
       { id: 'b', label: 'Kozy Koala', icon: 'bear', buddyKey: 'kozy koala', scores: 'nurturer' },
@@ -63,6 +68,7 @@ export const questions: Question[] = [
     id: 5,
     scene: 'The sun begins to set — time for a treat!',
     prompt: 'What sounds best?',
+    ask: 'What shall we make, {name}?',
     choices: [
       { id: 'a', label: 'One more little adventure', icon: 'compass', scores: 'adventurer' },
       { id: 'b', label: 'Make a flower crown', icon: 'crown', scores: 'dreamer' },
@@ -72,6 +78,7 @@ export const questions: Question[] = [
     id: 6,
     scene: 'Back home, the garden is ready to bloom.',
     prompt: 'How do you settle in?',
+    ask: 'How shall we cozy up, {name}?',
     choices: [
       { id: 'a', label: 'A warm cuddle nap', icon: 'teddy', scores: 'nurturer' },
       { id: 'b', label: 'Build a cozy little house', icon: 'house', scores: 'maker' },

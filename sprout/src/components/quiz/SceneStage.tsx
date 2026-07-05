@@ -80,19 +80,24 @@ export default function SceneStage({
   const [reaction, setReaction] = useState<{ icon: string; v: number } | null>(null)
   // A pick briefly changes HOW the buddy moves (dash / climb / hop…) then settles.
   const [traverse, setTraverse] = useState<string | undefined>()
+  // Some picks are a little ACTION: for the crown the buddy stops walking and
+  // sits down to put it on, then gets up and carries on.
+  const [sitting, setSitting] = useState(false)
   useEffect(() => {
     if (!burst) return
     setGusting(true)
     setReaction({ icon: burst.icon, v: burst.n % 2 })
     if (effectKind(burst.icon) !== 'buddy') setTraverse(burst.icon)
-    const t1 = window.setTimeout(() => setGusting(false), 1100)
-    const t2 = window.setTimeout(() => setReaction(null), 1500)
-    const t3 = window.setTimeout(() => setTraverse(undefined), 1700)
-    return () => {
-      window.clearTimeout(t1)
-      window.clearTimeout(t2)
-      window.clearTimeout(t3)
+    const timers: number[] = [
+      window.setTimeout(() => setGusting(false), 1100),
+      window.setTimeout(() => setReaction(null), 1500),
+      window.setTimeout(() => setTraverse(undefined), 1700),
+    ]
+    if (burst.icon === 'crown') {
+      setSitting(true)
+      timers.push(window.setTimeout(() => setSitting(false), 2000))
     }
+    return () => timers.forEach((t) => window.clearTimeout(t))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [burst?.n])
   const effSway = gusting ? '0.5s' : swayDur
@@ -115,7 +120,7 @@ export default function SceneStage({
 
   return (
     <div
-      className={'scene' + (gusting ? ' gusting' : '') + (env.has('cloudy') ? ' cozy' : '')}
+      className={'scene' + (gusting ? ' gusting' : '') + (env.has('cloudy') ? ' cozy' : '') + (sitting ? ' sitting' : '')}
       style={{ '--sway': effSway } as CSSProperties}
       onPointerMove={onMove}
       onPointerLeave={() => setPtr({ x: 0, y: 0 })}
@@ -184,11 +189,56 @@ export default function SceneStage({
           </g>
         </g>
 
+        {/* fairytale fireflies — soft glowing dots drifting over the meadow */}
+        <g className="scene__fireflies" transform={`translate(${px(-24)} ${py(-6)})`}>
+          {([[110, 360], [240, 410], [360, 340], [470, 430], [560, 380], [660, 420], [720, 350], [180, 300], [520, 300], [400, 470]] as const).map(([x, y], k) => (
+            <g key={k} transform={`translate(${x} ${y})`}>
+              {/* outer g positions; inner g drifts + glows (separate so the CSS
+                  transform animation doesn't clobber the placement) */}
+              <g className={`firefly firefly--${k % 5}`} style={{ animationDelay: `${(k % 6) * 0.7}s` }}>
+                <circle r="6" fill="#f4ecb0" opacity="0.18" />
+                <circle r="2.2" fill="#fbf6cf" />
+              </g>
+            </g>
+          ))}
+        </g>
+
+        {/* a rare wishing star streaks across the night sky */}
+        <g className="scene__shootingstar">
+          <g className="shooter">
+            <line x1="0" y1="0" x2="-30" y2="12" stroke="#fbf6cf" strokeWidth="2.4" strokeLinecap="round" opacity="0.85" />
+            <circle r="2.6" fill="#fff8dc" />
+          </g>
+        </g>
+
         {/* environment: 'blow bubbles' → bubbles drift up and to the LEFT (walking right) */}
         {env.has('bubbles') && (
           <g className="scene__bubbles">
             {Array.from({ length: 11 }, (_, k) => (
               <circle key={k} className={`bubble bubble--${k % 5}`} style={{ animationDelay: `${(k * 0.7) % 4}s` }} cx={70 + k * 66} cy={470} r={6 + (k % 3) * 3} fill="rgba(170,205,224,0.26)" stroke="#a9c7d6" strokeWidth="1.5" />
+            ))}
+          </g>
+        )}
+
+        {/* complements: extra touches that make each choice feel richer */}
+        {env.has('windy') && (
+          <g className="scene__leaves">
+            {[0, 1, 2, 3, 4, 5].map((k) => (
+              <path key={k} className={`leaf leaf--${k}`} d="M0 0 q7 -7 14 0 q-7 7 -14 0 Z" fill={k % 2 ? '#c98a5a' : '#a9805c'} />
+            ))}
+          </g>
+        )}
+        {env.has('mountains') && (
+          <g className="scene__bird">
+            <path d="M-16 0 q8 -9 16 0 M0 0 q8 -9 16 0" fill="none" stroke="#3b3a36" strokeWidth="2.5" strokeLinecap="round" />
+          </g>
+        )}
+        {toys.includes('crown') && (
+          <g className="scene__crownfx" transform="translate(400 250)">
+            {[0, 1, 2, 3, 4, 5].map((k) => (
+              <g key={k} className={`csparkle csparkle--${k}`}>
+                <Star r={4} fill="#f0d089" />
+              </g>
             ))}
           </g>
         )}
@@ -227,7 +277,8 @@ export default function SceneStage({
       {buddy && (
         <div
           className={
-            'scene__hero walking' +
+            'scene__hero' +
+            (sitting ? ' sitting' : ' walking') +
             (gusting ? ' gusting' : '') +
             (traverse ? ` traverse--${traverse}` : '') +
             (reaction ? ` react--${reaction.icon}` + (reaction.v ? ' rv2' : '') : '')
@@ -239,7 +290,12 @@ export default function SceneStage({
               <div className="scene__hero-gust">
                 <div className="scene__hero-react">
                   <div className="scene__hero-bob">
-                    <BuddyCharacter buddy={buddy} outfit={outfit} held={toys.slice(-2)} />
+                    <BuddyCharacter
+                      buddy={buddy}
+                      outfit={outfit}
+                      held={toys.slice(-2)}
+                      emotion={reaction ? 'excited' : env.has('cloudy') ? 'calm' : 'happy'}
+                    />
                   </div>
                 </div>
               </div>
@@ -255,7 +311,7 @@ export default function SceneStage({
             const pb = findBuddy(key)
             return pb ? (
               <span key={k} className="pal" style={{ animationDelay: `${k * 0.12}s` }}>
-                <BuddyCharacter buddy={pb} size={66} />
+                <BuddyCharacter buddy={pb} size={66} emotion="love" />
               </span>
             ) : null
           })}
@@ -291,6 +347,12 @@ function ForeTile({ ground, bloom }: { ground: string; bloom: number }) {
   return (
     <g>
       <path d="M0 520 L0 418 Q 200 384 400 418 T 800 418 L800 520 Z" fill={ground} />
+      {/* a soft moonlit trail winding along the ground — the storybook path */}
+      <path d="M0 486 Q 200 470 400 488 T 800 486 L800 520 L0 520 Z" fill="#e9e0c4" opacity="0.16" />
+      {/* toadstools tucked in the grass */}
+      <Toadstool x={70} y={470} s={1.1} />
+      <Toadstool x={92} y={476} s={0.8} />
+      <Toadstool x={540} y={474} s={1} />
       {blades.map((k) => {
         const x = 8 + k * 34
         const h = 24 + (k % 5) * 6
@@ -306,8 +368,14 @@ function ForeTile({ ground, bloom }: { ground: string; bloom: number }) {
 function Moon() {
   return (
     <g>
-      <circle cx="0" cy="0" r="40" fill="#f6e6b6" opacity="0.35" />
+      {/* layered dreamy halo — softest outside, warmer near the moon */}
+      <circle cx="0" cy="0" r="72" fill="#f6e6b6" opacity="0.10" />
+      <circle cx="0" cy="0" r="56" fill="#f6e6b6" opacity="0.16" />
+      <circle cx="0" cy="0" r="44" fill="#f8ebc4" opacity="0.28" />
       <path d="M14 -32 A34 34 0 1 0 14 32 A26 30 0 1 1 14 -32 Z" fill="#f7e09c" stroke="#e7c98a" strokeWidth="1.5" />
+      {/* soft craters for a storybook moon */}
+      <circle cx="-6" cy="-14" r="4" fill="#e9cf90" opacity="0.6" />
+      <circle cx="-16" cy="16" r="3" fill="#e9cf90" opacity="0.5" />
       <path d="M-10 -4 q4 4 8 0 M2 -4 q4 4 8 0" fill="none" stroke="#c99a6a" strokeWidth="2" strokeLinecap="round" />
       <path d="M-6 8 q7 8 14 0" fill="none" stroke="#c99a6a" strokeWidth="2.4" strokeLinecap="round" />
       <circle cx="-14" cy="6" r="4" fill="#e9b48c" opacity="0.5" />
@@ -322,11 +390,23 @@ function Stars({ offX, offY }: { offX: number; offY: number }) {
     [560, 150, 5, '#cdd6f0'], [700, 60, 4, '#e7c8b0'], [150, 200, 3, '#f0e0a8'], [420, 180, 3, '#cdd6f0'],
     [640, 200, 5, '#f0e0a8'], [260, 250, 4, '#e7c8b0'], [520, 250, 3, '#cdd6f0'], [750, 150, 4, '#f0e0a8'],
   ] as const
+  // a few crisp four-point sparkles among the soft stars, for a fairytale sky
+  const sparkles = [[130, 90], [380, 130], [610, 110], [300, 210]] as const
   return (
     <g className="scene__stars" transform={`translate(${offX} ${offY})`}>
       {stars.map(([x, y, r, fill], k) => (
-        <g key={k} className="star" style={{ animationDelay: `${(k % 5) * 0.4}s` }} transform={`translate(${x} ${y})`}>
-          <Star r={r as number} fill={fill as string} />
+        // outer g positions; inner g twinkles (CSS transform kept off the placement)
+        <g key={k} transform={`translate(${x} ${y})`}>
+          <g className="star" style={{ animationDelay: `${(k % 5) * 0.4}s` }}>
+            <Star r={r as number} fill={fill as string} />
+          </g>
+        </g>
+      ))}
+      {sparkles.map(([x, y], k) => (
+        <g key={'sp' + k} transform={`translate(${x} ${y})`}>
+          <g className="star star--spark" style={{ animationDelay: `${k * 0.6}s` }}>
+            <FourStar r={7} />
+          </g>
         </g>
       ))}
     </g>
@@ -334,6 +414,11 @@ function Stars({ offX, offY }: { offX: number; offY: number }) {
 }
 function Star({ r, fill }: { r: number; fill: string }) {
   return <path d={`M0 ${-r} Q ${r * 0.3} ${-r * 0.3} ${r} 0 Q ${r * 0.3} ${r * 0.3} 0 ${r} Q ${-r * 0.3} ${r * 0.3} ${-r} 0 Q ${-r * 0.3} ${-r * 0.3} 0 ${-r} Z`} fill={fill} />
+}
+// a sharp four-point twinkle
+function FourStar({ r }: { r: number }) {
+  const t = r * 0.22
+  return <path d={`M0 ${-r} L${t} ${-t} L${r} 0 L${t} ${t} L0 ${r} L${-t} ${t} L${-r} 0 L${-t} ${-t} Z`} fill="#fdf6d0" />
 }
 
 function Cloud({ x, y, s }: { x: number; y: number; s: number }) {
@@ -347,6 +432,11 @@ function Cloud({ x, y, s }: { x: number; y: number; s: number }) {
 }
 
 function Tree({ x, y, s }: { x: number; y: number; s: number }) {
+  // soft storybook canopy dotted with little glowing blossoms
+  const blossoms = [
+    [-14, -12, '#f3c6d6'], [10, -18, '#f6e2a6'], [22, 2, '#f3c6d6'],
+    [-24, 6, '#f6e2a6'], [0, 6, '#efd0b0'], [14, 16, '#f3c6d6'],
+  ] as const
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
       <rect x="-6" y="10" width="12" height="40" rx="6" fill="#6b5340" />
@@ -354,6 +444,22 @@ function Tree({ x, y, s }: { x: number; y: number; s: number }) {
       <circle cx="-22" cy="6" r="22" fill="#688769" />
       <circle cx="22" cy="6" r="22" fill="#688769" />
       <circle cx="0" cy="16" r="24" fill="#5f7d5f" />
+      {blossoms.map(([bx, by, c], k) => (
+        <circle key={k} className="blossom" style={{ animationDelay: `${(k % 4) * 0.5}s` }} cx={bx} cy={by} r={3} fill={c as string} />
+      ))}
+    </g>
+  )
+}
+
+// classic fairytale toadstool — red cap with white spots, cozy in the grass
+function Toadstool({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <path d="M-6 0 Q-7 14 -4 16 L4 16 Q7 14 6 0 Z" fill="#f3ead9" stroke="#d9c8ad" strokeWidth="1" />
+      <path d="M-15 1 Q0 -18 15 1 Q8 6 0 6 Q-8 6 -15 1 Z" fill="#d98a7a" stroke="#b96a5c" strokeWidth="1" />
+      <circle cx="-7" cy="-2" r="2.4" fill="#fbf3e6" />
+      <circle cx="3" cy="-5" r="2.2" fill="#fbf3e6" />
+      <circle cx="8" cy="-1" r="1.8" fill="#fbf3e6" />
     </g>
   )
 }

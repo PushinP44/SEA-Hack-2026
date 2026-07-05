@@ -9,17 +9,21 @@ import type { Buddy } from '../../data/buddies'
 
 const INK = '#4a4640'
 export type Outfit = { color: string; label?: string }
+// how the character is feeling — shapes brows, mouth, cheeks + a cue over the head
+export type Emotion = 'happy' | 'excited' | 'calm' | 'love'
 
 export default function BuddyCharacter({
   buddy,
   size = 132,
   outfit,
   held = [],
+  emotion = 'happy',
 }: {
   buddy: Buddy
   size?: number
   outfit?: Outfit
   held?: string[] // toy icons carried in the doll's hands
+  emotion?: Emotion
 }) {
   const png = artFor(`buddy-${buddy.key}`)
   if (png) return <img src={png} alt={buddy.name} width={size} height={size} style={{ objectFit: 'contain' }} />
@@ -28,7 +32,9 @@ export default function BuddyCharacter({
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" role="img" aria-label={buddy.name}>
       <ellipse cx="60" cy="113" rx="26" ry="5" fill="rgba(74,70,64,0.15)" />
-      {doll ? <Doll look={lookFor(buddy.key)} outfit={outfit} /> : <Animal f={featureFor(buddy.theme)} uid={buddy.key} outfit={outfit} />}
+      {doll ? <Doll look={lookFor(buddy.key)} outfit={outfit} emotion={emotion} /> : <Animal f={featureFor(buddy.theme)} uid={buddy.key} outfit={outfit} emotion={emotion} />}
+      {/* a little feeling floats over the head (sparkles / a heart) */}
+      <EmotionCue emotion={emotion} />
       {/* toys are actually held/played by the character (no bubble) */}
       {held.slice(-2).map((icon, k) => {
         const p = TOY_PLACE[icon] ?? { x: 91, y: 90, size: 30 }
@@ -71,8 +77,76 @@ const TOY_PLACE: Record<string, { x: number; y: number; size: number; rot?: numb
   workshop: { x: 90, y: 84, size: 32, cls: 'inhand' },
 }
 
+/* ------------------------------ Emotion bits ------------------------------ */
+// little eyebrows whose lift/angle sells the feeling
+function Brows({ cx, y, dx, emotion }: { cx: number; y: number; dx: number; emotion: Emotion }) {
+  const common = { fill: 'none', stroke: INK, strokeWidth: 1.7, strokeLinecap: 'round' as const }
+  if (emotion === 'excited')
+    return (
+      <g {...common}>
+        <path className="brow" d={`M${cx - dx - 4} ${y - 2} q4 -4 8 -1`} />
+        <path className="brow" d={`M${cx + dx - 4} ${y - 3} q4 -3 8 2`} />
+      </g>
+    )
+  if (emotion === 'calm')
+    return (
+      <g {...common} strokeWidth={1.5}>
+        <path d={`M${cx - dx - 4} ${y + 1} q4 -1 8 0`} />
+        <path d={`M${cx + dx - 4} ${y + 1} q4 -1 8 0`} />
+      </g>
+    )
+  return (
+    <g {...common}>
+      <path d={`M${cx - dx - 4} ${y} q4 -3 8 0`} />
+      <path d={`M${cx + dx - 4} ${y} q4 -3 8 0`} />
+    </g>
+  )
+}
+
+// tiny white catch-light in each eye — instantly "alive"
+function EyeHi({ cx, cy, dx }: { cx: number; cy: number; dx: number }) {
+  return (
+    <g fill="#fff" opacity="0.9">
+      <circle cx={cx - dx + 1.4} cy={cy - 1.6} r="1" />
+      <circle cx={cx + dx + 1.4} cy={cy - 1.6} r="1" />
+    </g>
+  )
+}
+
+// a warm mouth that changes with the mood (used by the doll)
+function Mouth({ cx, y, emotion }: { cx: number; y: number; emotion: Emotion }) {
+  if (emotion === 'excited')
+    return <path d={`M${cx - 5} ${y} q5 8 10 0 q-5 2 -10 0 Z`} fill="#c65b52" stroke={INK} strokeWidth="1.5" strokeLinejoin="round" />
+  if (emotion === 'calm')
+    return <path d={`M${cx - 4} ${y + 1} q4 3 8 0`} fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" />
+  return <path d={`M${cx - 5} ${y} q5 5 10 0`} fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" />
+}
+
+function Spark() {
+  return <path d="M0 -5 L1.4 -1.4 L5 0 L1.4 1.4 L0 5 L-1.4 1.4 L-5 0 L-1.4 -1.4 Z" fill="#fdf0c4" stroke="#f0d089" strokeWidth="0.6" />
+}
+
+// the feeling that floats above the head
+function EmotionCue({ emotion }: { emotion: Emotion }) {
+  if (emotion === 'excited')
+    return (
+      <g className="emocue">
+        {/* outer g positions; inner g pulses (keeps the CSS scale off the placement) */}
+        <g transform="translate(30 20)"><g className="emospark emospark--a"><Spark /></g></g>
+        <g transform="translate(92 16)"><g className="emospark emospark--b"><Spark /></g></g>
+      </g>
+    )
+  if (emotion === 'love')
+    return (
+      <g className="emocue emocue--love" transform="translate(60 10)">
+        <path className="emoheart" d="M0 3 q-6 -9 -11 -1 q-3 6 11 13 q14 -7 11 -13 q-5 -8 -11 1 Z" fill="#e78aa0" stroke="#c96f86" strokeWidth="1.1" />
+      </g>
+    )
+  return null
+}
+
 /* ------------------------------ Animals ------------------------------ */
-function Animal({ f, uid, outfit }: { f: AnimalFeature; uid: string; outfit?: Outfit }) {
+function Animal({ f, uid, outfit, emotion = 'happy' }: { f: AnimalFeature; uid: string; outfit?: Outfit; emotion?: Emotion }) {
   const cx = 60
   const cy = f.neck ? 34 : 44
   const r = 24
@@ -154,26 +228,31 @@ function Animal({ f, uid, outfit }: { f: AnimalFeature; uid: string; outfit?: Ou
       {/* muzzle */}
       <Muzzle f={f} cx={cx} cy={cy} />
 
-      {/* eyes */}
-      {f.bigEyes ? (
-        <g>
-          <circle cx={cx - 8} cy={cy - 1} r="5" fill="#fff" stroke={INK} strokeWidth="1.4" />
-          <circle cx={cx + 8} cy={cy - 1} r="5" fill="#fff" stroke={INK} strokeWidth="1.4" />
-          <circle cx={cx - 8} cy={cy - 1} r="2.4" fill={INK} />
-          <circle cx={cx + 8} cy={cy - 1} r="2.4" fill={INK} />
-        </g>
-      ) : (
-        <g fill={INK}>
-          <circle cx={cx - 8} cy={cy - 2} r="2.6" />
-          <circle cx={cx + 8} cy={cy - 2} r="2.6" />
-        </g>
-      )}
-      {f.cheek && (
-        <g fill={f.cheek}>
-          <circle cx={cx - 14} cy={cy + 6} r="4" />
-          <circle cx={cx + 14} cy={cy + 6} r="4" />
-        </g>
-      )}
+      {/* brows above the eyes carry the mood */}
+      <Brows cx={cx} y={cy - 9} dx={8} emotion={emotion} />
+
+      {/* eyes (blink together) + a catch-light so they feel alive */}
+      <g className="face-eyes">
+        {f.bigEyes ? (
+          <g>
+            <circle cx={cx - 8} cy={cy - 1} r="5" fill="#fff" stroke={INK} strokeWidth="1.4" />
+            <circle cx={cx + 8} cy={cy - 1} r="5" fill="#fff" stroke={INK} strokeWidth="1.4" />
+            <circle cx={cx - 8} cy={cy - 1} r="2.4" fill={INK} />
+            <circle cx={cx + 8} cy={cy - 1} r="2.4" fill={INK} />
+          </g>
+        ) : (
+          <g fill={INK}>
+            <circle cx={cx - 8} cy={cy - 2} r="2.6" />
+            <circle cx={cx + 8} cy={cy - 2} r="2.6" />
+          </g>
+        )}
+        <EyeHi cx={cx} cy={cy - 1} dx={8} />
+      </g>
+      {/* rosy cheeks — always a little warmth (soft if the animal has none) */}
+      <g fill={f.cheek ?? 'rgba(224,132,120,0.34)'}>
+        <circle cx={cx - 14} cy={cy + 6} r="4" />
+        <circle cx={cx + 14} cy={cy + 6} r="4" />
+      </g>
       {f.whiskers && (
         <g stroke={INK} strokeWidth="1.2" strokeLinecap="round">
           <path d={`M${cx - 10} ${cy + 8} l-14 -2 M${cx - 10} ${cy + 11} l-14 2`} />
@@ -270,7 +349,7 @@ function Dress({ color }: { color: string }) {
 }
 
 /* ------------------------------- Dolls ------------------------------- */
-function Doll({ look, outfit }: { look: DollLook; outfit?: Outfit }) {
+function Doll({ look, outfit, emotion = 'happy' }: { look: DollLook; outfit?: Outfit; emotion?: Emotion }) {
   const cx = 60
   const cy = 40
   const r = 23
@@ -298,12 +377,16 @@ function Doll({ look, outfit }: { look: DollLook; outfit?: Outfit }) {
 
       <HairFront look={look} cx={cx} cy={cy} r={r} />
 
-      {/* face */}
-      <circle cx={cx - 8} cy={cy} r="2.6" fill={INK} />
-      <circle cx={cx + 8} cy={cy} r="2.6" fill={INK} />
+      {/* face — brows + blinking eyes with a catch-light + mood mouth */}
+      <Brows cx={cx} y={cy - 7} dx={8} emotion={emotion} />
+      <g className="face-eyes">
+        <circle cx={cx - 8} cy={cy} r="2.6" fill={INK} />
+        <circle cx={cx + 8} cy={cy} r="2.6" fill={INK} />
+        <EyeHi cx={cx} cy={cy} dx={8} />
+      </g>
       <circle cx={cx - 13} cy={cy + 6} r="3.4" fill="rgba(209,106,90,0.35)" />
       <circle cx={cx + 13} cy={cy + 6} r="3.4" fill="rgba(209,106,90,0.35)" />
-      <path d={`M${cx - 5} ${cy + 8} q5 5 10 0`} fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" />
+      <Mouth cx={cx} y={cy + 8} emotion={emotion} />
 
       {/* outfit accessory: a matching hair bow when a suggested outfit is worn */}
       {outfit && (
