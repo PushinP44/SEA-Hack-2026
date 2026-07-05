@@ -45,9 +45,10 @@ jobs:
       - name: SPA fallback for client routing (/quiz on refresh)
         run: cp dist/index.html dist/404.html
 
+      # Pages must be enabled once by a repo admin (Settings > Pages > Source:
+      # "GitHub Actions"). This step only reads that config — it does not try to
+      # create it (the workflow token isn't allowed to).
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true # turn Pages on automatically if it isn't already
 
       - uses: actions/upload-pages-artifact@v3
         with:
