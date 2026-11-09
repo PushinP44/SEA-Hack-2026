@@ -1,4 +1,4 @@
-# KraDoll — AI Art Generation Prompts
+# SPROUT — AI Art Generation Prompts
 
 The app renders themed emoji/CSS placeholders by default. To swap in real
 AI-generated illustrations, generate PNGs with any image model (referencing the

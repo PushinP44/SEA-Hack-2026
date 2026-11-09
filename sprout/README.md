@@ -1,7 +1,7 @@
-# KraDoll — a play-first gift concierge for Apple Park Kids
+# SPROUT — a play-first gift concierge for Apple Park Kids
 
 A believable clone of the [appleparkkids.com](https://appleparkkids.com) homepage
-with a **KraDoll** tab that launches a Forest-style, wordless picture-quiz. The
+with a **SPROUT** tab that launches a Forest-style, wordless picture-quiz. The
 child plays a five-minute story starring a real doll or Farm Buddy; the parent
 receives a finished purchase decision — a personality archetype plus one real,
 priced, add-to-cart product.
@@ -13,7 +13,7 @@ npm install
 npm run dev          # Vite on :5173, story API on :8787
 ```
 
-Open http://localhost:5173 → click **KraDoll** (or go to `/quiz`).
+Open http://localhost:5173 → click **SPROUT** (or go to `/quiz`).
 
 ## How it works — two deliberately separated layers
 

@@ -24,8 +24,8 @@ export default function NavBar() {
               {t}
             </a>
           ))}
-          <Link to="/quiz" className="nav__kradoll">
-            KraDoll
+          <Link to="/quiz" className="nav__sprout">
+            SPROUT
           </Link>
         </div>
       </div>

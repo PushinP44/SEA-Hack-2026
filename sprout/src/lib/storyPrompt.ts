@@ -189,7 +189,7 @@ export function buildSeedancePrompt(input: {
   ].filter(Boolean)
 
   return [
-    '════════════════════ KraDoll → SEEDANCE VIDEO PROMPT ════════════════════',
+    '════════════════════ SPROUT → SEEDANCE VIDEO PROMPT ════════════════════',
     `A wordless, non-interactive bedtime FAIRYTALE for children ages 5 and under${childName ? `, made for ${childName}` : ''}. Follow ${buddy.name} through one continuous, gentle night-meadow journey. NO on-screen text, NO dialogue, NO narration — tell the whole story through soft visuals and music only.`,
     '',
     '[TARGET MODEL] ByteDance Seedance 1.0 (pro), text-to-video, 1080p, 24fps.',

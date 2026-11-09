@@ -1,4 +1,4 @@
-name: Deploy KraDoll to GitHub Pages
+name: Deploy SPROUT to GitHub Pages
 
 # Builds the Vite app in sprout/ and publishes it to GitHub Pages on every push
 # to main. The site is static — the /api/story AI call gracefully falls back to

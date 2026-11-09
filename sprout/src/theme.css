@@ -66,12 +66,12 @@ button { font-family: inherit; cursor: pointer; }
 .nav__links { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; align-items: center; }
 .nav__link { font-size: 14px; color: var(--ink); padding: 6px 2px; border-bottom: 2px solid transparent; }
 .nav__link:hover { border-color: var(--sage); }
-.nav__kradoll {
+.nav__sprout {
   background: linear-gradient(120deg, var(--terra), var(--rose-deep));
   color: #fff; padding: 8px 16px; border-radius: 999px; font-weight: 800;
   display: inline-flex; align-items: center; gap: 6px; box-shadow: var(--shadow);
 }
-.nav__kradoll:hover { filter: brightness(1.05); border: none; }
+.nav__sprout:hover { filter: brightness(1.05); border: none; }
 
 /* ---------- Layout ---------- */
 .container { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
@@ -103,7 +103,7 @@ button { font-family: inherit; cursor: pointer; }
 .btn { border: none; border-radius: 999px; padding: 13px 26px; font-weight: 800; font-size: 15px; }
 .btn--primary { background: var(--sage-deep); color: #fff; box-shadow: var(--shadow); }
 .btn--primary:hover { background: #5f8a63; }
-.btn--kradoll { background: linear-gradient(120deg, var(--terra), var(--rose-deep)); color: #fff; box-shadow: var(--shadow); }
+.btn--sprout { background: linear-gradient(120deg, var(--terra), var(--rose-deep)); color: #fff; box-shadow: var(--shadow); }
 .btn--ghost { background: #fff; border: 1px solid var(--line); color: var(--ink); }
 .btn--lg { padding: 16px 34px; font-size: 17px; }
 

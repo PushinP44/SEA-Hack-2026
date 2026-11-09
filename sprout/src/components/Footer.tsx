@@ -26,7 +26,7 @@ export default function Footer() {
         </div>
         <div>
           <h5>Gift Menu</h5>
-          <a href="/quiz">KraDoll gift quiz</a>
+          <a href="/quiz">SPROUT gift quiz</a>
           <a href="#">Gift cards</a>
           <a href="#">Registry</a>
         </div>

@@ -100,5 +100,5 @@ app.post('/api/story', async (req, res) => {
 app.get('/api/health', (_req, res) => res.json({ ok: true, ai: hasKey }))
 
 app.listen(PORT, () => {
-  console.log(`[kradoll] story server on :${PORT} (ai=${hasKey ? 'on' : 'template-only'})`)
+  console.log(`[sprout] story server on :${PORT} (ai=${hasKey ? 'on' : 'template-only'})`)
 })

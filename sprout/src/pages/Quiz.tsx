@@ -169,7 +169,7 @@ export default function Quiz() {
     // Log a full Seedance video-prompt storyboard of the whole journey, so a
     // non-interactive fairytale video could be generated from this exact play.
     console.log(
-      '%cKraDoll → Seedance storyboard prompt (copy everything below)',
+      '%cSPROUT → Seedance storyboard prompt (copy everything below)',
       'font-weight:bold;color:#7a5cff;font-size:13px',
     )
     console.log(
@@ -261,14 +261,14 @@ export default function Quiz() {
         >
           {step.kind === 'intro' && (
             <div className="panel">
-              <h1 className="quiz__title">KraDoll</h1>
+              <h1 className="quiz__title">SPROUT</h1>
               <p className="quiz__tag">Plant a story · grow the perfect gift</p>
               <p className="quiz__scene">
                 A gentle wind is blowing over the hills of Apple Park. Pick a buddy and let’s go on a
                 little adventure together — no reading required.
               </p>
               <button
-                className="btn btn--kradoll btn--lg"
+                className="btn btn--sprout btn--lg"
                 onClick={() => {
                   initAudio() // unlock audio on the first gesture
                   setStep({ kind: 'mode' })
@@ -444,7 +444,7 @@ export default function Quiz() {
                     Added to cart
                   </span>
                 ) : (
-                  <button className="btn btn--kradoll btn--lg" onClick={() => setAdded(true)}>
+                  <button className="btn btn--sprout btn--lg" onClick={() => setAdded(true)}>
                     Add to cart · {money(price(product).now)}
                   </button>
                 )}
